@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  database:
+    image: postgres:18
+    container_name: neur_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret_password
+      POSTGRES_DB: neur_postgres
+    ports:
+      - 5400:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/18/data
+
+volumes:
+  pgdata:
