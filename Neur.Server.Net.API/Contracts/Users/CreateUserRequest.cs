@@ -1,6 +1,8 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Neur.Server.Net.API.Contracts.Users;
 
 public record CreateUserRequest (
-    string username,
-    string password
+    [Required] string username,
+    [Required] string password
 );

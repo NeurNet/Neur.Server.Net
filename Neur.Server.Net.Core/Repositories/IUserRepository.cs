@@ -4,5 +4,5 @@ namespace Neur.Server.Net.Core.Repositories;
 
 public interface IUserRepository {
     Task Add(UserEntity user);
-    Task<UserEntity?> Get(Guid userId);
+    Task<UserEntity?> GetByLdapId(string id);
 }

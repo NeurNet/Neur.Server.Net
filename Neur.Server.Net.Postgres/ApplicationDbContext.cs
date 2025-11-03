@@ -12,6 +12,8 @@ public class ApplicationDbContext : DbContext {
     public ApplicationDbContext(IConfiguration configuration) {
         _configuration = configuration;
     }
+    
+    public DbSet<UserEntity> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         optionsBuilder

@@ -9,7 +9,7 @@ public class UserConfiguration : IEntityTypeConfiguration<UserEntity> {
         builder.ToTable("Users");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
-        builder.Property(x => x.LdapId).IsRequired().ValueGeneratedNever();
+        builder.Property(x => x.Username).IsRequired().ValueGeneratedNever();
         builder.Property(x => x.Name).HasMaxLength(255);
         builder.Property(x => x.Surname).HasMaxLength(255);
     }

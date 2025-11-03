@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neur.Server.Net.Postgres", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neur.Server.Net.API", "Neur.Server.Net.API\Neur.Server.Net.API.csproj", "{DC9C4E1C-780F-40D6-9DD0-5344C46E52E3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neur.Server.Net.Application", "Neur.Server.Net.Application\Neur.Server.Net.Application.csproj", "{43C89570-2E70-4B19-8B41-E6587980B69F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neur.Server.Net.Infrastructure", "Neur.Server.Net.Infrastructure\Neur.Server.Net.Infrastructure.csproj", "{961B077A-32F3-42CD-BB2B-50AF9BC0373B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +34,13 @@ Global
 		{DC9C4E1C-780F-40D6-9DD0-5344C46E52E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC9C4E1C-780F-40D6-9DD0-5344C46E52E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC9C4E1C-780F-40D6-9DD0-5344C46E52E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43C89570-2E70-4B19-8B41-E6587980B69F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43C89570-2E70-4B19-8B41-E6587980B69F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43C89570-2E70-4B19-8B41-E6587980B69F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43C89570-2E70-4B19-8B41-E6587980B69F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{961B077A-32F3-42CD-BB2B-50AF9BC0373B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{961B077A-32F3-42CD-BB2B-50AF9BC0373B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{961B077A-32F3-42CD-BB2B-50AF9BC0373B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{961B077A-32F3-42CD-BB2B-50AF9BC0373B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

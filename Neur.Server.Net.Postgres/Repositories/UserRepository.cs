@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
 
@@ -15,7 +16,9 @@ public class UserRepository : IUserRepository {
         await _db.SaveChangesAsync();
     }
 
-    public async Task<UserEntity?> Get(Guid userId) {
-        return await _db.FindAsync<UserEntity>(userId);
+    public async Task<UserEntity?> GetByLdapId(string ldapId) {
+        return await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Username == ldapId);
     }
 }
