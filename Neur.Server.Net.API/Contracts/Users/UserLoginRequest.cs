@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Neur.Server.Net.API.Contracts.Users;
 
-public record CreateUserRequest (
+public record UserLoginRequest (
     [Required] string username,
     [Required] string password
 );

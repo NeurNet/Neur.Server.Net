@@ -1,8 +1,12 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Neur.Server.Net.API.Contracts.Users;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
+using Neur.Server.Net.Infrastructure;
 
 namespace Neur.Server.Net.API.Controllers;
 
@@ -15,14 +19,30 @@ public class UserController : Controller {
         _userRepository = userRepository;
     }
 
-    [HttpPost]
-    public async Task<IResult> Login(CreateUserRequest req, UserService userService) {
+    [HttpPost("auth")]
+    public async Task<IResult> Login(UserLoginRequest req, UserService userService) {
         try {
             var token = await userService.Login(req.username, req.password);
-            return Results.Ok(token);
+            Response.Cookies.Append("auth_token", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // если HTTPS
+                SameSite = SameSiteMode.Strict
+            });
+            
+            return Results.Ok();
         }
         catch (Exception ex) {
             return Results.BadRequest(ex.Message);
         }
+    }
+    
+    [HttpGet("auth")]
+    [Authorize]
+    public async Task<IResult> Auth(ClaimsPrincipal user) {
+        var id = user.FindFirst("id")?.Value;
+        var tokens = user.FindFirst("tokens")?.Value;
+        
+        return Results.Ok(new { id, tokens });
     }
 }
