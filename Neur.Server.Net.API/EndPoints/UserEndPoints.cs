@@ -33,10 +33,8 @@ public static class UserEndPoints {
         }
     }
     
-    public static async Task<IResult> Auth(ClaimsPrincipal user) {
-        Console.WriteLine("Аутентификация");
-        
-        var id = user.FindFirst("id")?.Value;
+    public static async Task<IResult> Auth(ClaimsPrincipal user) {`
+        var id = user.FindFirst("userId")?.Value;
         var tokens = user.FindFirst("tokens")?.Value;
         
         return Results.Json(new { id, tokens });

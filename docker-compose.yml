@@ -11,7 +11,7 @@ services:
     networks:
       - neurNetwork
     ports:
-      - 5400:5432
+      - 5432:5432
     volumes:
       - pgdata:/var/lib/postgresql/18/data
   
@@ -26,7 +26,7 @@ services:
     ports:
       - 8080:8080
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
 
 volumes:
   pgdata:

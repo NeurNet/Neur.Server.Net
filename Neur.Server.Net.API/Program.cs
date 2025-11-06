@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
@@ -30,13 +31,23 @@ builder.Services.AddApiAuthentication(builder.Configuration.GetSection(nameof(Jw
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment()) {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// if (app.Environment.IsDevelopment()) {
+//     app.UseSwagger();
+//     app.UseSwaggerUI();
+// }
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.AddMappedEndpoints();
+
+// Миграции для базы данных
+using (var scope = app.Services.CreateScope()) {
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
+
 app.Run();

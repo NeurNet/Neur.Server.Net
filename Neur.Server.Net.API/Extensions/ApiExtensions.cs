@@ -9,7 +9,6 @@ namespace Neur.Server.Net.API.Extensions;
 
 public static class ApiExtensions {
     public static void AddApiAuthentication(this IServiceCollection services, JwtOptions jwtOptions) {
-        Console.WriteLine("Меня реально вызвали лол");
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options => {
                 options.TokenValidationParameters = new TokenValidationParameters() {
@@ -22,7 +21,6 @@ public static class ApiExtensions {
                 options.Events = new JwtBearerEvents {
                     OnMessageReceived = context => {
                         context.Token = context.Request.Cookies["auth_token"];
-                        Console.WriteLine("Чёто произошло");
                         return Task.CompletedTask;
                     }
                 };
