@@ -1,17 +1,35 @@
 version: "3.8"
 
 services:
-  database:
+  postgres:
     image: postgres:18
     container_name: neur_postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: secret_password
       POSTGRES_DB: neur_postgres
+    networks:
+      - neurNetwork
     ports:
       - 5400:5432
     volumes:
       - pgdata:/var/lib/postgresql/18/data
+  
+  neur_server:
+    container_name: neur_server
+    build:
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    networks:
+      - neurNetwork
+    ports:
+      - 8080:8080
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
 
 volumes:
   pgdata:
+    
+networks:
+  neurNetwork:
