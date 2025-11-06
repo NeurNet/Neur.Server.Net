@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
 using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
@@ -8,7 +9,20 @@ using Neur.Server.Net.Infrastructure.Interfaces;
 using Neur.Server.Net.Postgres;
 using Neur.Server.Net.Postgres.Repositories;
 
+var CorsPolicy = "CorsPolicy";
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicy,
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173")
+                    .WithHeaders(HeaderNames.ContentType)
+                    .AllowCredentials();
+        });
+});
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -39,13 +53,16 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseCors(CorsPolicy);
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.AddMappedEndpoints();
 
 // Миграции для базы данных
-using (var scope = app.Services.CreateScope()) {
+using (var scope = app.Services.CreateScope())
+{
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
 }
