@@ -1,21 +1,40 @@
+using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.Options;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services.Contracts;
 
 namespace Neur.Server.Net.Application.Services;
 
-public class LdapService : ILdapService {
+public class CollegeService : ICollegeService {
     private readonly HttpClient _httpClient;
+    private readonly CollegeServiceOptions _options;
     
-    public LdapService(HttpClient httpClient) {
+    public CollegeService(HttpClient httpClient, IOptions<CollegeServiceOptions> options) {
         _httpClient = httpClient;
+        _options = options.Value;
     }
 
-    public async Task<LdapUser?> AuthenticateAsync(string username, string password) {
-        if (username == "i24s0202" & password == "123") { // Пока нет LDAP, просто для теста
-            return new LdapUser(Username: "i24s0202", Name: "Григорий", "Воробьёв");
+    private async Task<AuthUserResponse?> SendAuthRequest(string username, string password) {
+        var requestBody = JsonSerializer.Serialize(new AuthRequest(
+            username: username,
+            password: password
+        ));
+        var stringContent = new StringContent(requestBody, Encoding.UTF8, "application/json");
+        
+        var response = await _httpClient.PostAsync($"{_options.Url}/api/v1/users/signin", stringContent);
+        if (response.IsSuccessStatusCode) {
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<AuthResponse>(content).user;
         }
-        else if (username == "i24s0208" & password == "1234") { // Пока нет LDAP, просто для теста
-            return new LdapUser(Username: "i24s0208", Name: "Чувак", "Крутой");
+        
+        return null;
+    }
+
+    public async Task<AuthUserResponse?> AuthenticateAsync(string username, string password) {
+        var userResponse = await SendAuthRequest(username, password);
+        if (userResponse != null) {
+            return userResponse;
         }
         return null;
     }
