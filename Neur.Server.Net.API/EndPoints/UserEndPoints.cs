@@ -33,7 +33,7 @@ public static class UserEndPoints {
         }
     }
     
-    public static async Task<IResult> Auth(ClaimsPrincipal user) {`
+    public static async Task<IResult> Auth(ClaimsPrincipal user) {
         var id = user.FindFirst("userId")?.Value;
         var tokens = user.FindFirst("tokens")?.Value;
         
