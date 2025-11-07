@@ -8,9 +8,20 @@ public static class UserEndPoints {
     public static IEndpointRouteBuilder MapUserEndPoints(this IEndpointRouteBuilder app) {
         var endpoints = app.MapGroup("/api/users/auth");
         
-        endpoints.MapPost("/login", Login);
-        endpoints.MapPost("/logout", Logout);
-        endpoints.MapGet(String.Empty, Auth).RequireAuthorization();
+        endpoints.MapPost("/login", Login)
+            .WithSummary("Авторизация")
+            .WithDescription("Сохраняет JWT токен в Cookie <b>'auth_token'</b>, также возвращает сам токен")
+            .Produces<UserLoginResponse>(200)
+            .Produces(401);
+        endpoints.MapPost("/logout", Logout)
+            .WithSummary("Выход из сервиса")
+            .WithDescription("Удаляет Cookie <b>'auth_token'</b>");
+        endpoints.MapGet(String.Empty, Auth)
+            .WithSummary("Аутентификация")
+            .WithDescription("Проверяет <b>Cookie</b> в запросе, если секретный ключ соответствует действительному - возвращает пользователя")
+            .Produces<UserAuthResponse>(200, "application/json")
+            .Produces(401)
+            .RequireAuthorization();
         
         return endpoints;
     }
@@ -24,10 +35,10 @@ public static class UserEndPoints {
                 SameSite = SameSiteMode.Strict
             });
 
-            return Results.Ok(token);
+            return Results.Ok(new UserLoginResponse(token));
         }
         catch (NullReferenceException) {
-            return Results.NotFound();
+            return Results.Unauthorized();
         }
         catch (Exception ex) {
             return Results.BadRequest(ex.Message);

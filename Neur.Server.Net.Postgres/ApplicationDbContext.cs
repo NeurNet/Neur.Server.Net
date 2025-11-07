@@ -14,6 +14,7 @@ public class ApplicationDbContext : DbContext {
     }
     
     public DbSet<UserEntity> Users { get; set; }
+    public DbSet<ModelEntity> Models { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         optionsBuilder
@@ -24,5 +25,6 @@ public class ApplicationDbContext : DbContext {
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         modelBuilder.ApplyConfiguration(new UserConfiguration());
+        modelBuilder.ApplyConfiguration(new  ModelConfiguration());
     }
 }

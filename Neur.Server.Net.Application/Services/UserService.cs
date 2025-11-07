@@ -8,27 +8,27 @@ using Neur.Server.Net.Infrastructure.Interfaces;
 namespace Neur.Server.Net.Application.Services;
 
 public class UserService : IUserService {
-    private readonly IUserRepository _userRepository;
+    private readonly IUsersRepository _usersRepository;
     private readonly ICollegeService _collegeService;
     private readonly IJwtProvider _jwtProvider;
     
-    public UserService(IUserRepository userRepository, ICollegeService collegeService,  IJwtProvider jwtProvider) {
-        _userRepository = userRepository;
+    public UserService(IUsersRepository usersRepository, ICollegeService collegeService,  IJwtProvider jwtProvider) {
+        _usersRepository = usersRepository;
         _collegeService = collegeService;
         _jwtProvider = jwtProvider;
     }
 
     //Тут временный говнокод
-    private Role DeterminateRole(string role) {
+    private UserRole DeterminateRole(string role) {
         switch (role) {
             case "student":
-                return Role.Student;
+                return UserRole.Student;
             case "teacher":
-                return Role.Teacher;
+                return UserRole.Teacher;
             case "admin":
-                return Role.Admin;
+                return UserRole.Admin;
         }
-        throw new Exception("Role doesn't exist");
+        throw new Exception("UserRole doesn't exist");
     }
     public async Task<string> Login(string username, string password) {
         var collegeUser = await _collegeService.AuthenticateAsync(username, password);
@@ -36,7 +36,7 @@ public class UserService : IUserService {
             throw new NullReferenceException();
         }
         
-        var user = await _userRepository.GetByLdapId(username);
+        var user = await _usersRepository.GetByLdapId(username);
         if (user == null) {
             //Говнокод
             var name = collegeUser.username.Split()[0];
@@ -47,10 +47,10 @@ public class UserService : IUserService {
                 username: collegeUser.id,
                 name: name,
                 surname: surname,
-                role: DeterminateRole(collegeUser.role),
+                userRole: DeterminateRole(collegeUser.role),
                 tokens: 10
             );
-            await _userRepository.Add(newUser);
+            await _usersRepository.Add(newUser);
             user = newUser;
         }
         var token = _jwtProvider.GenerateToken(user);

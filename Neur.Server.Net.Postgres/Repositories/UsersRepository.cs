@@ -4,10 +4,10 @@ using Neur.Server.Net.Core.Repositories;
 
 namespace Neur.Server.Net.Postgres.Repositories;
 
-public class UserRepository : IUserRepository {
+public class UsersRepository : IUsersRepository {
     private readonly ApplicationDbContext _db;
     
-    public UserRepository(ApplicationDbContext context) {
+    public UsersRepository(ApplicationDbContext context) {
         _db = context;
     }
     

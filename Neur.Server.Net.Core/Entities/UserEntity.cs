@@ -7,27 +7,27 @@ public class UserEntity {
     public string Username { get; init; }
     public string Name { get; init; }
     public string Surname { get; init; }
-    public Role Role { get; init; }
+    public UserRole UserRole { get; init; }
     
     public int Tokens { get; set; }
     private UserEntity() {}
 
-    private UserEntity(Guid id, string username, string name, string surname, Role role, int tokens) {
+    private UserEntity(Guid id, string username, string name, string surname, UserRole userRole, int tokens) {
         Id = id;
         Username = username;
         Name = name;
         Surname = surname;
-        Role = role;
+        UserRole = userRole;
         Tokens = tokens;
     }
 
-    public static UserEntity Create(Guid id, string username, string name, string surname, Role role, int tokens) {
+    public static UserEntity Create(Guid id, string username, string name, string surname, UserRole userRole, int tokens) {
         return new UserEntity(
             id: id,
             username: username,
             name: name,
             surname: surname,
-            role: role,
+            userRole: userRole,
             tokens: tokens
         );
     }
