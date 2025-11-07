@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Neur.Server.Net.API.EndPoints;
+using Neur.Server.Net.API.Options;
 using Neur.Server.Net.Infrastructure;
 
 namespace Neur.Server.Net.API.Extensions;

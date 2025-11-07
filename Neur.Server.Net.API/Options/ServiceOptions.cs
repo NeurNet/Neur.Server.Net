@@ -1,4 +1,4 @@
-namespace Neur.Server.Net.API;
+namespace Neur.Server.Net.API.Options;
 
 public class Service {
     public string url {get; set;} = string.Empty;

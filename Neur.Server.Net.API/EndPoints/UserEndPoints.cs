@@ -8,7 +8,8 @@ public static class UserEndPoints {
     public static IEndpointRouteBuilder MapUserEndPoints(this IEndpointRouteBuilder app) {
         var endpoints = app.MapGroup("/api/users/auth");
         
-        endpoints.MapPost(String.Empty, Login);
+        endpoints.MapPost("/login", Login);
+        endpoints.MapPost("/logout", Logout);
         endpoints.MapGet(String.Empty, Auth).RequireAuthorization();
         
         return endpoints;
@@ -32,8 +33,13 @@ public static class UserEndPoints {
             return Results.BadRequest(ex.Message);
         }
     }
+
+    private static async Task<IResult> Logout(ClaimsPrincipal user, HttpResponse response) {
+        response.Cookies.Delete("auth_token");
+        return Results.Ok();
+    }
     
-    public static async Task<IResult> Auth(ClaimsPrincipal user) {
+    private static async Task<IResult> Auth(ClaimsPrincipal user) {
         var id = user.FindFirst("userId")?.Value;
         var tokens = user.FindFirst("tokens")?.Value;
         
