@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 using Neur.Server.Net.API.EndPoints;
 using Neur.Server.Net.Infrastructure;
 
@@ -31,7 +32,7 @@ public static class ApiExtensions {
     public static void AddCorsPolicy(this IServiceCollection services, ServiceOptions serviceOptions) {
         Console.WriteLine("Frontend: " + serviceOptions.Frontend.url);
         services.AddCors(options => {
-            options.AddPolicy("AllowedFrontend", policy => {
+            options.AddPolicy("CorsPolicy", policy => {
                 policy.WithOrigins(serviceOptions.Frontend.url)
                     .AllowAnyHeader()
                     .AllowAnyMethod()
