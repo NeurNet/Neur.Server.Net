@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Neur.Server.Net.API;
 using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
@@ -10,10 +11,12 @@ using Neur.Server.Net.Postgres.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCorsPolicy(builder.Configuration.GetSection("Services").Get<ServiceOptions>());
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(nameof(JwtOptions)));
-builder.Services.Configure<CollegeServiceOptions>(builder.Configuration.GetSection(nameof(CollegeServiceOptions)));
+builder.Services.Configure<CollegeServiceOptions>(builder.Configuration.GetSection("Services").GetSection(
+    nameof(CollegeService)));
 
 builder.Services.AddDbContext<ApplicationDbContext>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();

@@ -28,6 +28,18 @@ public static class ApiExtensions {
         services.AddAuthorization();
     }
 
+    public static void AddCorsPolicy(this IServiceCollection services, ServiceOptions serviceOptions) {
+        Console.WriteLine("Frontend: " + serviceOptions.Frontend.url);
+        services.AddCors(options => {
+            options.AddPolicy("AllowedFrontend", policy => {
+                policy.WithOrigins(serviceOptions.Frontend.url)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            });
+        });
+    }
+
     public static void AddMappedEndpoints(this IEndpointRouteBuilder app) {
         app.MapUserEndPoints();
     }

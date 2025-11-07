@@ -21,8 +21,7 @@ public class CollegeService : ICollegeService {
             password: password
         ));
         var stringContent = new StringContent(requestBody, Encoding.UTF8, "application/json");
-        
-        var response = await _httpClient.PostAsync($"{_options.Url}/api/v1/users/signin", stringContent);
+        var response = await _httpClient.PostAsync($"{_options.url}/api/v1/users/signin", stringContent);
         if (response.IsSuccessStatusCode) {
             var content = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<AuthResponse>(content).user;
