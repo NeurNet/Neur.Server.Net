@@ -6,7 +6,7 @@ namespace Neur.Server.Net.API.EndPoints;
 
 public static class UserEndPoints {
     public static IEndpointRouteBuilder MapUserEndPoints(this IEndpointRouteBuilder app) {
-        var endpoints = app.MapGroup("/api/users/auth");
+        var endpoints = app.MapGroup("/api/users/auth").WithTags("Users");
         
         endpoints.MapPost("/login", Login)
             .WithSummary("Авторизация")
