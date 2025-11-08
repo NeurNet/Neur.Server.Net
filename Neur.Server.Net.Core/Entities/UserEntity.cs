@@ -1,4 +1,5 @@
 using Neur.Server.Net.Core.Interfaces;
+using Neur.Server.Net.Core.Records;
 
 namespace Neur.Server.Net.Core.Entities;
 
@@ -7,17 +8,19 @@ public class UserEntity {
     public string Username { get; init; }
     public string Name { get; init; }
     public string Surname { get; init; }
-    public UserRole UserRole { get; init; }
-    
+    public UserRole Role { get; init; }
     public int Tokens { get; set; }
+    public List<ChatEntity> Chats { get; init; }
+    
+    public ChatEntity Chat { get; init; }
     private UserEntity() {}
 
-    private UserEntity(Guid id, string username, string name, string surname, UserRole userRole, int tokens) {
+    private UserEntity(Guid id, string username, string name, string surname, UserRole role, int tokens) {
         Id = id;
         Username = username;
         Name = name;
         Surname = surname;
-        UserRole = userRole;
+        Role = role;
         Tokens = tokens;
     }
 
@@ -27,7 +30,7 @@ public class UserEntity {
             username: username,
             name: name,
             surname: surname,
-            userRole: userRole,
+            role: userRole,
             tokens: tokens
         );
     }

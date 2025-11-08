@@ -1,4 +1,5 @@
 using Neur.Server.Net.Core.Interfaces;
+using Neur.Server.Net.Core.Records;
 
 namespace Neur.Server.Net.Core.Entities;
 

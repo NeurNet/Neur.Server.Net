@@ -1,7 +1,7 @@
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
-namespace Neur.Server.Net.Core.Interfaces;
+namespace Neur.Server.Net.Core.Records;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ModelType {

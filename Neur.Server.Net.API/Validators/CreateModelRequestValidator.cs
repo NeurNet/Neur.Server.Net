@@ -1,6 +1,7 @@
 using FluentValidation;
 using Neur.Server.Net.API.Contracts.Models;
 using Neur.Server.Net.Core.Interfaces;
+using Neur.Server.Net.Core.Records;
 
 namespace Neur.Server.Net.API.Validators;
 

@@ -3,6 +3,7 @@ using Neur.Server.Net.API.Contracts.Models;
 using Neur.Server.Net.API.Validators;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Interfaces;
+using Neur.Server.Net.Core.Records;
 using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Postgres.Repositories;
 
