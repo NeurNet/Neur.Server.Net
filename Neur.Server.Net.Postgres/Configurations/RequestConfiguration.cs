@@ -9,8 +9,8 @@ public class RequestConfiguration : IEntityTypeConfiguration<RequestEntity> {
         builder.ToTable("Requests");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedOnAdd();
-        builder.Property(x => x.CreatedAt).IsRequired();
-        builder.Property(x => x.Promt).HasMaxLength(3000).IsRequired();
+        builder.HasIndex(x => x.CreatedAt);
+        builder.Property(x => x.Prompt).HasMaxLength(3000).IsRequired();
         builder.Property(x => x.Response);
         builder.Property(x => x.FinishedAt);
     }

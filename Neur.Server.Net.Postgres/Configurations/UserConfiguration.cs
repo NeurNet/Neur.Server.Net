@@ -12,5 +12,10 @@ public class UserConfiguration : IEntityTypeConfiguration<UserEntity> {
         builder.Property(x => x.Username).IsRequired().ValueGeneratedNever();
         builder.Property(x => x.Name).HasMaxLength(255);
         builder.Property(x => x.Surname).HasMaxLength(255);
+        builder
+            .HasMany(x => x.Chats)
+            .WithOne()
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

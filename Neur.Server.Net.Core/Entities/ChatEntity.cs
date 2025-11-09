@@ -8,7 +8,5 @@ public class ChatEntity {
     public Guid UserId { get; init; }
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; }
-    
-    public UserEntity User { get; init; }
-    public ModelEntity Model { get; init; }
+    public ModelEntity Model { get; private set; }
 }

@@ -21,7 +21,6 @@ public class ChatsRepository : IChatsRepository {
         return 
             await _db.Chats
                 .AsNoTracking()
-                .Include(x => x.User)
                 .Include(x => x.Model)
                 .ToListAsync();
     }
@@ -31,7 +30,6 @@ public class ChatsRepository : IChatsRepository {
             await _db.Chats
                 .AsNoTracking()
                 .Where(x => x.UserId == userId && x.ModelId == modelId)
-                .Include(x => x.User)
                 .Include(x => x.Model)
                 .ToListAsync();
     }

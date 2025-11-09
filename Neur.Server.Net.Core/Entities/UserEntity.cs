@@ -10,8 +10,7 @@ public class UserEntity {
     public string Surname { get; init; }
     public UserRole Role { get; init; }
     public int Tokens { get; set; }
-    public List<ChatEntity> Chats { get; init; }
-    
+    public ICollection<ChatEntity> Chats { get; set; }
     public ChatEntity Chat { get; init; }
     private UserEntity() {}
 

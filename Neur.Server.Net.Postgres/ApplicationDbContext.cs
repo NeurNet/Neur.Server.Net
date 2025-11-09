@@ -27,7 +27,7 @@ public class ApplicationDbContext : DbContext {
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         modelBuilder.ApplyConfiguration(new UserConfiguration());
-        modelBuilder.ApplyConfiguration(new  ModelConfiguration());
+        modelBuilder.ApplyConfiguration(new ModelConfiguration());
         modelBuilder.ApplyConfiguration(new ChatConfiguration());
         modelBuilder.ApplyConfiguration(new RequestConfiguration());
     }
