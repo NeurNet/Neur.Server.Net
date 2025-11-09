@@ -18,7 +18,8 @@ public class JwtProvider : IJwtProvider {
     public string GenerateToken(UserEntity user) {
         Claim[] claims = new[]
         {
-            new Claim("userId", user.Username),
+            new Claim("userId", user.Id.ToString()),
+            new Claim("username", user.Username),
             new Claim("tokens", user.Tokens.ToString())
         };
         

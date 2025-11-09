@@ -45,5 +45,6 @@ public static class ApiExtensions {
     public static void AddMappedEndpoints(this IEndpointRouteBuilder app) {
         app.MapUserEndPoints();
         app.MapModelsEndPoints();
+        app.MapChatsEndPoints();
     }
 }

@@ -26,6 +26,7 @@ builder.Services.Configure<CollegeServiceOptions>(builder.Configuration.GetSecti
 builder.Services.AddDbContext<ApplicationDbContext>();
 builder.Services.AddScoped<IUsersRepository, UsersRepository>();
 builder.Services.AddScoped<IModelsRepository, ModelsRepository>();
+builder.Services.AddScoped<IChatsRepository, ChatsRepository>();
 
 builder.Services.AddScoped<HttpClient>();
 

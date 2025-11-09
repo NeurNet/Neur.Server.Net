@@ -52,8 +52,9 @@ public static class UserEndPoints {
     
     private static async Task<IResult> Auth(ClaimsPrincipal user) {
         var id = user.FindFirst("userId")?.Value;
+        var username = user.FindFirst("username")?.Value;
         var tokens = user.FindFirst("tokens")?.Value;
         
-        return Results.Json(new { id, tokens });
+        return Results.Json(new UserAuthResponse(id, username, tokens));
     }
 }
