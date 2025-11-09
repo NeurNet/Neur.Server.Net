@@ -11,7 +11,7 @@ public class ChatsRepository : IChatsRepository {
         _db = db;
     }
     
-    public async Task<Guid> Create(ChatEntity entity) {
+    public async Task<Guid> Add(ChatEntity entity) {
         await _db.Chats.AddAsync(entity);
         await _db.SaveChangesAsync();
         return entity.Id;

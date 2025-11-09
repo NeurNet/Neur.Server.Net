@@ -7,6 +7,27 @@ public class ChatEntity {
     public Guid ModelId { get; init; }
     public Guid UserId { get; init; }
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    
+    // Навигационные свойства
+    public UserEntity User { get; init; }
     public ModelEntity Model { get; private set; }
+
+    private ChatEntity(Guid id, Guid modelId, Guid userId, DateTime createdAt, DateTime? updatedAt) {
+        Id = id;
+        ModelId = modelId;
+        UserId = userId;
+        CreatedAt = createdAt;
+        UpdatedAt = updatedAt;
+    }
+
+    public static ChatEntity Create(Guid id, Guid modelId, Guid userId, DateTime createdAt, DateTime? updatedAt) {
+        return new ChatEntity(
+            id,
+            modelId,
+            userId,
+            createdAt,
+            updatedAt
+        );
+    }
 }

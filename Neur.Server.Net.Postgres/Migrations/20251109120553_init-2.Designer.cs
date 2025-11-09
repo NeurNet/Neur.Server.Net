@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Neur.Server.Net.Postgres;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Neur.Server.Net.Postgres.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251109120553_init-2")]
+    partial class init2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -116,6 +119,9 @@ namespace Neur.Server.Net.Postgres.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("ChatId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -138,6 +144,8 @@ namespace Neur.Server.Net.Postgres.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ChatId");
+
                     b.ToTable("Users", (string)null);
                 });
 
@@ -149,15 +157,24 @@ namespace Neur.Server.Net.Postgres.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Neur.Server.Net.Core.Entities.UserEntity", "User")
+                    b.HasOne("Neur.Server.Net.Core.Entities.UserEntity", null)
                         .WithMany("Chats")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Model");
+                });
 
-                    b.Navigation("User");
+            modelBuilder.Entity("Neur.Server.Net.Core.Entities.UserEntity", b =>
+                {
+                    b.HasOne("Neur.Server.Net.Core.Entities.ChatEntity", "Chat")
+                        .WithMany()
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chat");
                 });
 
             modelBuilder.Entity("Neur.Server.Net.Core.Entities.UserEntity", b =>

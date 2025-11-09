@@ -14,7 +14,7 @@ public class UserConfiguration : IEntityTypeConfiguration<UserEntity> {
         builder.Property(x => x.Surname).HasMaxLength(255);
         builder
             .HasMany(x => x.Chats)
-            .WithOne()
+            .WithOne(x => x.User)
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }

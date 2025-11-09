@@ -11,7 +11,6 @@ public class UserEntity {
     public UserRole Role { get; init; }
     public int Tokens { get; set; }
     public ICollection<ChatEntity> Chats { get; set; }
-    public ChatEntity Chat { get; init; }
     private UserEntity() {}
 
     private UserEntity(Guid id, string username, string name, string surname, UserRole role, int tokens) {
