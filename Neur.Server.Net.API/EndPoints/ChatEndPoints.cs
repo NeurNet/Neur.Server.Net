@@ -21,7 +21,7 @@ public static class ChatEndPoints {
         endpoints.MapGet(String.Empty, GetAllUserChats)
             .WithSummary("Получить список всех чатов авторизованного пользователя")
             .Produces(401)
-            .Produces<List<ChatEntity>>(200);
+            .Produces<List<GetChatResponse>>(200);
 
         endpoints.MapDelete("/{id}", Delete)
             .WithSummary("Удалить чат")
@@ -33,7 +33,7 @@ public static class ChatEndPoints {
             .WithSummary("Получить чат")
             .Produces(401)
             .Produces(404)
-            .Produces<ChatEntity>(200);
+            .Produces<GetChatResponse>(200);
         
         endpoints.MapPost("/{id}/generate", Generate)
             .WithSummary("Сгенерировать ответ от нейросети")
@@ -108,7 +108,8 @@ public static class ChatEndPoints {
         }
 
         var chats = await repository.GetAllUserChats(Guid.Parse(userId));
-
+        var result = chats.Select(chat => new GetChatResponse(chat.Id, chat.ModelId, chat.CreatedAt, chat.UpdatedAt)).ToList();
+        
         return Results.Ok(chats);
     }
 
@@ -117,7 +118,7 @@ public static class ChatEndPoints {
         if (chat == null) {
             return Results.NotFound("Chat not found");
         }
-        return Results.Ok(chat);
+        return Results.Ok(new GetChatResponse(chat.Id, chat.ModelId, chat.CreatedAt, chat.UpdatedAt));
     }
 
     private static async Task<IResult> Delete(Guid id, IChatsRepository repository) {

@@ -15,7 +15,7 @@ public static class ModelEndPoints {
 
         endpoints.MapGet(String.Empty, GetAll)
             .WithSummary("Получить список всех моделей")
-            .Produces<List<ModelEntity>>(200)
+            .Produces<List<GetModelResponse>>(200)
             .Produces(401)
             .RequireAuthorization();
         
@@ -58,6 +58,16 @@ public static class ModelEndPoints {
 
     private static async Task<IResult> GetAll(IModelsRepository modelsRepository) {
         var models = await modelsRepository.GetAll();
+
+        var result = models.Select(model => new GetModelResponse(
+            id:  model.Id,
+            name: model.Name,
+            model: model.ModelName,
+            version: model.Version,
+            status: model.Status.ToString(),
+            createdAt: model.CreatedAt,
+            updatedAt: model.UpdatedAt
+        ));
         return Results.Ok(models);
     }
 }
