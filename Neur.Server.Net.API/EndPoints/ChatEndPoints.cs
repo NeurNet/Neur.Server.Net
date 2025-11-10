@@ -19,6 +19,12 @@ public static class ChatEndPoints {
             .WithSummary("Получить список всех чатов авторизованного пользователя")
             .Produces(401)
             .Produces<List<ChatEntity>>(200);
+
+        endpoints.MapPost("/{id}", Delete)
+            .WithSummary("Удалить чат")
+            .Produces(401)
+            .Produces(404)
+            .Produces(200);
         
         return endpoints;
     }
@@ -57,5 +63,16 @@ public static class ChatEndPoints {
         var chats = await repository.GetAllUserChats(Guid.Parse(userId));
 
         return Results.Ok(chats);
+    }
+
+    private static async Task<IResult> Delete(Guid id, IChatsRepository repository) {
+        try {
+            await repository.Delete(id);
+            return Results.Ok(id);
+        }
+
+        catch (NullReferenceException) {
+            return Results.NotFound("There is no such chat");
+        }
     }
 }

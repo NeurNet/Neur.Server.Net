@@ -33,8 +33,14 @@ public class ChatsRepository : IChatsRepository {
                 .Include(x => x.Model)
                 .ToListAsync();
     }
-
     public async Task Delete(Guid id) {
-        await _db.Chats.Where(x => x.Id == id).ExecuteDeleteAsync();
+        var chat = await _db.Chats.Where(x => x.Id == id).FirstOrDefaultAsync();
+        if (chat != null) {
+            _db.Chats.Remove(chat);
+            await _db.SaveChangesAsync();
+        }
+        else {
+            throw new NullReferenceException();
+        }
     }
 }
