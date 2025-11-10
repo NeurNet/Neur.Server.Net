@@ -25,6 +25,15 @@ public class ChatsRepository : IChatsRepository {
                 .ToListAsync();
     }
 
+    public async Task<ChatEntity?> Get(Guid id) {
+        return 
+            await _db.Chats
+                .AsNoTracking()
+                .Where(x => x.Id == id)
+                .Include(x => x.Model)
+                .FirstOrDefaultAsync();
+    }
+
     public async Task<List<ChatEntity>> GetUserModelChats(Guid userId, Guid modelId) {
         return 
             await _db.Chats

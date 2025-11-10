@@ -1,5 +1,8 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using Neur.Server.Net.API.Contracts.Chats;
+using Neur.Server.Net.Application.Services;
+using Neur.Server.Net.Application.Services.Contracts.OllamaService;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
 
@@ -20,11 +23,23 @@ public static class ChatEndPoints {
             .Produces(401)
             .Produces<List<ChatEntity>>(200);
 
-        endpoints.MapPost("/{id}", Delete)
+        endpoints.MapDelete("/{id}", Delete)
             .WithSummary("Удалить чат")
             .Produces(401)
             .Produces(404)
             .Produces(200);
+
+        endpoints.MapGet("/{id}", Get)
+            .WithSummary("Получить чат")
+            .Produces(401)
+            .Produces(404)
+            .Produces<ChatEntity>(200);
+        
+        endpoints.MapPost("/{id}/generate", Generate)
+            .WithSummary("Сгенерировать ответ от нейросети")
+            .Produces(401)
+            .Produces(404)
+            .Produces<string>(200, "text/event-stream");
         
         return endpoints;
     }
@@ -53,6 +68,38 @@ public static class ChatEndPoints {
         return Results.Ok(new CreateChatResponse(chat.Id, chat.ModelId));
     }
 
+    private static async Task Generate(Guid id, [FromBody] GenerateRequest request, IChatsRepository repository, 
+        OllamaService ollamaService, HttpContext context) {
+        var chat = await repository.Get(id);
+        if (chat == null) {
+            context.Response.StatusCode = 404;
+            await context.Response.WriteAsync("Chat not found");
+            return;
+        }
+        if (request.prompt.Length == 0) {
+            context.Response.StatusCode = 400;
+            await context.Response.WriteAsync("Chat not found");
+            return;
+        }
+        
+        // Готовим ответ для SSE
+        context.Response.StatusCode = 200;
+        context.Response.ContentType = "text/event-stream";
+        context.Response.Headers["Cache-Control"] = "no-cache";
+        context.Response.Headers["Connection"] = "keep-alive";
+
+        await foreach (var chunk in ollamaService.StreamResponse(
+                           new OllamaRequest(chat.Model.ModelName, request.prompt, true)))
+        {
+            // Формат для SSE: каждая строка = одно событие
+            await context.Response.WriteAsync($"data: {chunk}\n\n");
+            await context.Response.Body.FlushAsync();
+        }
+
+        await context.Response.WriteAsync("event: done\ndata: [DONE]\n\n");
+        await context.Response.Body.FlushAsync();
+    }
+
     private static async Task<IResult> GetAllUserChats(ClaimsPrincipal user, IChatsRepository repository) {
         var userId = user.FindFirst("userId")?.Value;
 
@@ -65,6 +112,14 @@ public static class ChatEndPoints {
         return Results.Ok(chats);
     }
 
+    private static async Task<IResult> Get(Guid id, IChatsRepository repository) {
+        var chat = await repository.Get(id);
+        if (chat == null) {
+            return Results.NotFound("Chat not found");
+        }
+        return Results.Ok(chat);
+    }
+
     private static async Task<IResult> Delete(Guid id, IChatsRepository repository) {
         try {
             await repository.Delete(id);
@@ -72,7 +127,7 @@ public static class ChatEndPoints {
         }
 
         catch (NullReferenceException) {
-            return Results.NotFound("There is no such chat");
+            return Results.NotFound("Chat not found");
         }
     }
 }

@@ -38,6 +38,7 @@ public static class ModelEndPoints {
                 var model = ModelEntity.Create(
                     id: Guid.NewGuid(),
                     name: req.name,
+                    modelName: req.model,
                     type: Enum.Parse<ModelType>(req.type),
                     version: req.version ?? "0.1",
                     status: Enum.Parse<ModelStatus>(req.status),

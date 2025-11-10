@@ -12,7 +12,7 @@ public class RequestEntity {
     
     private RequestEntity() {}
 
-    private RequestEntity(Guid chatId, string prompt, string response, DateTime createdAt, DateTime finishedAt) {
+    private RequestEntity(Guid chatId, string prompt, string? response, DateTime createdAt, DateTime? finishedAt) {
         ChatId = chatId;
         Prompt = prompt;
         Response = response;
@@ -20,13 +20,13 @@ public class RequestEntity {
         FinishedAt = finishedAt;
     }
 
-    public static RequestEntity Create(Guid chatId, string promt, string response, DateTime createdAt, DateTime finishedAt) {
+    public static RequestEntity Create(Guid chatId, string promt, DateTime createdAt) {
         return new RequestEntity(
             chatId,
             promt,
-            response,
+            null,
             createdAt,
-            finishedAt
+            null
         );
     }
 }

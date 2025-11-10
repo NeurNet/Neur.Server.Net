@@ -22,16 +22,19 @@ builder.Services.AddSwaggerApi();
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(nameof(JwtOptions)));
 builder.Services.Configure<CollegeServiceOptions>(builder.Configuration.GetSection("Services").GetSection(
     nameof(CollegeService)));
+builder.Services.Configure<OllamaServiceOptions>(builder.Configuration.GetSection("Services").GetSection(nameof(OllamaService)));
 
 builder.Services.AddDbContext<ApplicationDbContext>();
 builder.Services.AddScoped<IUsersRepository, UsersRepository>();
 builder.Services.AddScoped<IModelsRepository, ModelsRepository>();
 builder.Services.AddScoped<IChatsRepository, ChatsRepository>();
+builder.Services.AddScoped<IRequestsRepository, RequestsRepository>();
 
 builder.Services.AddScoped<HttpClient>();
 
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ICollegeService, CollegeService>();
+builder.Services.AddScoped<OllamaService>();
 
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 

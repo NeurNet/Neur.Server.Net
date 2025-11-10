@@ -6,6 +6,8 @@ namespace Neur.Server.Net.Core.Entities;
 public class ModelEntity {
     public Guid Id { get; init; }
     public string Name { get; set; }
+    
+    public string ModelName { get; set; }
     public ModelType Type { get; set; }
     public string Version { get; set; }
     public ModelStatus Status { get; set; }
@@ -14,9 +16,10 @@ public class ModelEntity {
     
     private ModelEntity() {}
 
-    private ModelEntity(Guid id, string name, ModelType type, string version, ModelStatus status, DateTime? updatedAt, DateTime createdAt) {
+    private ModelEntity(Guid id, string name, string modelName, ModelType type, string version, ModelStatus status, DateTime? updatedAt, DateTime createdAt) {
         Id = id;
         Name = name;
+        ModelName = modelName;
         Type = type;
         Version = version;
         Status = status;
@@ -24,10 +27,11 @@ public class ModelEntity {
         CreatedAt = createdAt;
     }
 
-    public static ModelEntity Create(Guid id, string name, ModelType type, string version, ModelStatus status, DateTime createdAt) {
+    public static ModelEntity Create(Guid id, string name, string modelName, ModelType type, string version, ModelStatus status, DateTime createdAt) {
         return new ModelEntity(
             id,
             name,
+            modelName,
             type,
             version,
             status,
