@@ -4,10 +4,12 @@ namespace Neur.Server.Net.API.EndPoints;
 
 public static class RequestEndPoints {
     public static IEndpointRouteBuilder MapRequestEndPoints(this IEndpointRouteBuilder app) {
-        var endpoints = app.MapGroup("/api/requests").RequireAuthorization();
+        var endpoints = app.MapGroup("/api/requests")
+            .WithTags("Requests")
+            .RequireAuthorization();
 
         endpoints.MapPost(String.Empty, GetAll)
-            .WithTags("Получить список всех запросов");
+            .WithSummary("Получить список всех запросов");
         
         return endpoints;
     }
