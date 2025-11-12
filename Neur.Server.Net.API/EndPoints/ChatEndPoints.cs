@@ -109,7 +109,7 @@ public static class ChatEndPoints {
         var chats = await repository.GetAllUserChats(Guid.Parse(userId));
         var result = chats.Select(chat => new GetChatResponse(chat.Id, chat.ModelId, chat.CreatedAt, chat.UpdatedAt)).ToList();
         
-        return Results.Ok(chats);
+        return Results.Ok(result);
     }
 
     private static async Task<IResult> Get(Guid id, IChatsRepository repository) {
