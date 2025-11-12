@@ -92,11 +92,10 @@ public static class ChatEndPoints {
                            new OllamaRequest(chat.Model.ModelName, request.prompt, true)))
         {
             // Формат для SSE: каждая строка = одно событие
-            await context.Response.WriteAsync($"data: {chunk}\n\n");
+            await context.Response.WriteAsync(chunk);
             await context.Response.Body.FlushAsync();
         }
 
-        await context.Response.WriteAsync("event: done\ndata: [DONE]\n\n");
         await context.Response.Body.FlushAsync();
     }
 
