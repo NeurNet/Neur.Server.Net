@@ -1,6 +1,8 @@
 using System.Security.Claims;
+using Microsoft.Extensions.Options;
 using Neur.Server.Net.API.Contracts.Users;
 using Neur.Server.Net.Application.Services;
+using Neur.Server.Net.Infrastructure;
 
 namespace Neur.Server.Net.API.EndPoints;
 
@@ -26,13 +28,15 @@ public static class UserEndPoints {
         return endpoints;
     }
     
-    private static async Task<IResult> Login(UserLoginRequest req, UserService userService, HttpResponse response) {
+    private static async Task<IResult> Login(UserLoginRequest req, UserService userService, HttpResponse response, IOptions<JwtOptions> _jwtOptions) {
         try {
+            var jwtOptions = _jwtOptions.Value;
             var token = await userService.Login(req.username, req.password);
             response.Cookies.Append("auth_token", token, new CookieOptions {
                 HttpOnly = true,
                 Secure = true, // если HTTPS
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.Today.AddHours(jwtOptions.ExpiresHours)
             });
 
             return Results.Ok(new UserLoginResponse(token));
