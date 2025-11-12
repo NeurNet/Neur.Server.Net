@@ -36,7 +36,7 @@ public static class UserEndPoints {
                 HttpOnly = true,
                 Secure = true, // если HTTPS
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.Today.AddHours(jwtOptions.ExpiresHours)
+                Expires = DateTime.Now.AddHours(jwtOptions.ExpiresHours)
             });
 
             return Results.Ok(new UserLoginResponse(token));
