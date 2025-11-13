@@ -8,12 +8,12 @@ using Neur.Server.Net.Core.Repositories;
 
 namespace Neur.Server.Net.Application.Services;
 
-public class OllamaService {
+public class OllamaClient {
     private readonly HttpClient _httpClient;
     private readonly OllamaServiceOptions _options;
     private readonly IRequestsRepository _requestsRepository;
 
-    public OllamaService(HttpClient httpClient, IOptions<OllamaServiceOptions> options, IRequestsRepository repository) {
+    public OllamaClient(HttpClient httpClient, IOptions<OllamaServiceOptions> options, IRequestsRepository repository) {
         _httpClient = httpClient;
         _options = options.Value;
         _requestsRepository = repository;

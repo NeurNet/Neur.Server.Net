@@ -1,3 +1,4 @@
+using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Interfaces;
 using Neur.Server.Net.Core.Records;
 
@@ -31,5 +32,15 @@ public class UserEntity {
             role: userRole,
             tokens: tokens
         );
+    }
+    
+    public void ConsumeTokens(int count) {
+        if (count <= 0) {
+            throw new ArgumentOutOfRangeException(nameof(count));
+        }
+        if (Tokens < count) {
+            throw new InvalidOperationException("Tokens must be greater than or equal to count.");
+        }
+        Tokens -= count;
     }
 }

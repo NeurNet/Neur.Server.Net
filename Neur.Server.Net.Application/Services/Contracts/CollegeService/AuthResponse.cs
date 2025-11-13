@@ -1,4 +1,4 @@
-namespace Neur.Server.Net.Application.Services.Contracts;
+namespace Neur.Server.Net.Application.Services.Contracts.CollegeService;
 
 public record AuthUserResponse(
     string id,

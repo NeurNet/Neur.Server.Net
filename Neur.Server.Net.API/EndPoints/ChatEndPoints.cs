@@ -69,7 +69,7 @@ public static class ChatEndPoints {
     }
 
     private static async Task Generate(Guid id, [FromBody] GenerateRequest request, IChatsRepository repository, 
-        OllamaService ollamaService, HttpContext context) {
+        OllamaClient ollamaClient, HttpContext context) {
         var chat = await repository.Get(id);
         if (chat == null) {
             context.Response.StatusCode = 404;
@@ -88,7 +88,7 @@ public static class ChatEndPoints {
         context.Response.Headers["Cache-Control"] = "no-cache";
         context.Response.Headers["Connection"] = "keep-alive";
 
-        await foreach (var chunk in ollamaService.StreamResponse(
+        await foreach (var chunk in ollamaClient.StreamResponse(
                            new OllamaRequest(chat.Model.ModelName, request.prompt, true)))
         {
             // Формат для SSE: каждая строка = одно событие
