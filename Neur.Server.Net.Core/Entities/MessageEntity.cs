@@ -20,7 +20,7 @@ public class MessageEntity {
         Content = content;
     }
 
-    public MessageEntity Create(Guid chatId, DateTime createdAt, MessageRole role, string content) {
+    public static MessageEntity Create(Guid chatId, DateTime createdAt, MessageRole role, string content) {
         return new MessageEntity(Guid.NewGuid(), chatId, createdAt, role, content);
     }
 }

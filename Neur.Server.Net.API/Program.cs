@@ -30,6 +30,7 @@ builder.Services.AddScoped<IUsersRepository, UsersRepository>();
 builder.Services.AddScoped<IModelsRepository, ModelsRepository>();
 builder.Services.AddScoped<IChatsRepository, ChatsRepository>();
 builder.Services.AddScoped<IRequestsRepository, RequestsRepository>();
+builder.Services.AddScoped<IMessagesRepository, MessagesRepository>();
 
 builder.Services.AddScoped<HttpClient>();
 

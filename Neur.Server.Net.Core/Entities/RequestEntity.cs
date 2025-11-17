@@ -23,9 +23,9 @@ public class RequestEntity {
         FinishedAt = finishedAt;
     }
 
-    public static RequestEntity Create(Guid id, Guid chatId, string promt, DateTime createdAt) {
+    public static RequestEntity Create(Guid chatId, string promt, DateTime createdAt) {
         return new RequestEntity(
-            id,
+            Guid.NewGuid(), 
             chatId,
             promt,
             null,

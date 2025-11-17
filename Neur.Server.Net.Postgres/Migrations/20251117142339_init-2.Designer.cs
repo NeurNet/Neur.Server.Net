@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Neur.Server.Net.Postgres;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Neur.Server.Net.Postgres.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251117142339_init-2")]
+    partial class init2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,7 +75,8 @@ namespace Neur.Server.Net.Postgres.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChatId");
+                    b.HasIndex("ChatId")
+                        .IsUnique();
 
                     b.ToTable("Messages");
                 });
@@ -195,8 +199,8 @@ namespace Neur.Server.Net.Postgres.Migrations
             modelBuilder.Entity("Neur.Server.Net.Core.Entities.MessageEntity", b =>
                 {
                     b.HasOne("Neur.Server.Net.Core.Entities.ChatEntity", "Chat")
-                        .WithMany()
-                        .HasForeignKey("ChatId")
+                        .WithOne()
+                        .HasForeignKey("Neur.Server.Net.Core.Entities.MessageEntity", "ChatId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

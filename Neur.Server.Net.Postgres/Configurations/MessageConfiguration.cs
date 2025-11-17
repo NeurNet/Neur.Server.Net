@@ -10,8 +10,8 @@ public class MessageConfiguration : IEntityTypeConfiguration<MessageEntity> {
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder
             .HasOne(x => x.Chat)
-            .WithOne()
-            .HasForeignKey<MessageEntity>(x => x.ChatId);
+            .WithMany()
+            .HasForeignKey(x => x.ChatId);
         builder.Property(x => x.Content).IsRequired();
         builder.Property(x => x.Role).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
