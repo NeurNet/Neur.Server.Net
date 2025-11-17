@@ -21,7 +21,6 @@ public class RequestsRepository : IRequestsRepository {
         await _db.Requests
             .Where(req => req.Id == entity.Id)
             .ExecuteUpdateAsync(s => s
-                .SetProperty(p => p.Response, entity.Response)
                 .SetProperty(p => p.StartedAt, entity.StartedAt)
                 .SetProperty(p => p.FinishedAt, entity.FinishedAt)
             );

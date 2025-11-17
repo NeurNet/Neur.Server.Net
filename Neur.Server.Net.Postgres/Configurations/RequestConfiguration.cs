@@ -12,7 +12,6 @@ public class RequestConfiguration : IEntityTypeConfiguration<RequestEntity> {
         builder.HasIndex(x => x.CreatedAt);
         builder.Property(x => x.StartedAt);
         builder.Property(x => x.Prompt).HasMaxLength(3000).IsRequired();
-        builder.Property(x => x.Response);
         builder.Property(x => x.FinishedAt);
     }
 }

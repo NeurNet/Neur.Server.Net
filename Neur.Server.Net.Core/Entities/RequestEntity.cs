@@ -6,7 +6,6 @@ public class RequestEntity {
     public Guid Id { get; init; }
     public Guid ChatId { get; init; }
     public string Prompt {get; init; }
-    public string? Response {get; set; }
     public DateTime CreatedAt { get; init; }
     public DateTime? StartedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
@@ -19,7 +18,6 @@ public class RequestEntity {
         Id = id;
         ChatId = chatId;
         Prompt = prompt;
-        Response = response;
         CreatedAt = createdAt;
         StartedAt = startedAt;
         FinishedAt = finishedAt;

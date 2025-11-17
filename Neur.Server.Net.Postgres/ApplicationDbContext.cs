@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext {
     public DbSet<ModelEntity> Models { get; set; }
     public DbSet<ChatEntity> Chats { get; set; }
     public DbSet<RequestEntity> Requests { get; set; }
+    public DbSet<MessageEntity> Messages { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         optionsBuilder
@@ -30,5 +31,6 @@ public class ApplicationDbContext : DbContext {
         modelBuilder.ApplyConfiguration(new ModelConfiguration());
         modelBuilder.ApplyConfiguration(new ChatConfiguration());
         modelBuilder.ApplyConfiguration(new RequestConfiguration());
+        modelBuilder.ApplyConfiguration(new MessageConfiguration());
     }
 }

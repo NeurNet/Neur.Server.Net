@@ -27,7 +27,6 @@ public class LLMService {
                 requestResponse += response;
                 yield return response;
             }
-            request.Response = requestResponse;
             request.FinishedAt = DateTime.UtcNow;
             await _requestsRepository.Update(request);
         }
