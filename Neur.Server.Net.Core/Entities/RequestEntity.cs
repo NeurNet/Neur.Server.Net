@@ -3,29 +3,36 @@ using Neur.Server.Net.Core.Interfaces;
 namespace Neur.Server.Net.Core.Entities;
 
 public class RequestEntity {
-    public int Id { get; init; }
+    public Guid Id { get; init; }
     public Guid ChatId { get; init; }
     public string Prompt {get; init; }
-    public string? Response {get; init; }
+    public string? Response {get; set; }
     public DateTime CreatedAt { get; init; }
-    public DateTime? FinishedAt { get; init; }
+    public DateTime? StartedAt { get; set; }
+    public DateTime? FinishedAt { get; set; }
+    
+    public ChatEntity Chat {get; init; }
     
     private RequestEntity() {}
 
-    private RequestEntity(Guid chatId, string prompt, string? response, DateTime createdAt, DateTime? finishedAt) {
+    private RequestEntity(Guid id, Guid chatId, string prompt, string? response, DateTime createdAt, DateTime? startedAt, DateTime? finishedAt) {
+        Id = id;
         ChatId = chatId;
         Prompt = prompt;
         Response = response;
         CreatedAt = createdAt;
+        StartedAt = startedAt;
         FinishedAt = finishedAt;
     }
 
-    public static RequestEntity Create(Guid chatId, string promt, DateTime createdAt) {
+    public static RequestEntity Create(Guid id, Guid chatId, string promt, DateTime createdAt) {
         return new RequestEntity(
+            id,
             chatId,
             promt,
             null,
             createdAt,
+            null,
             null
         );
     }

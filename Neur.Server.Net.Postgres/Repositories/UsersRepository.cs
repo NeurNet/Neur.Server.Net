@@ -47,7 +47,6 @@ public class UsersRepository : IUsersRepository {
                 .SetProperty(x => x.Surname, user.Surname)
                 .SetProperty(x => x.Tokens, user.Tokens)
                 .SetProperty(x => x.Role, user.Role)
-                .SetProperty(x => x.Chats, user.Chats)
             );
         await _db.SaveChangesAsync();
     }

@@ -6,9 +6,9 @@ using Neur.Server.Net.Application.Services.Contracts;
 using Neur.Server.Net.Application.Services.Contracts.CollegeService;
 using Neur.Server.Net.Application.Services.Options;
 
-namespace Neur.Server.Net.Application.Services;
+namespace Neur.Server.Net.Application.Clients;
 
-public class CollegeClient : ICollegeService {
+public class CollegeClient : ICollegeClient {
     private readonly HttpClient _httpClient;
     private readonly CollegeServiceOptions _options;
     

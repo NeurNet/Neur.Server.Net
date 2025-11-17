@@ -3,8 +3,9 @@ using Neur.Server.Net.Core.Entities;
 namespace Neur.Server.Net.Core.Repositories;
 
 public interface IRequestsRepository {
-    Task<int> Add(RequestEntity entity);
+    Task<Guid> Add(RequestEntity entity);
     
-    Task Update(int id, string response, DateTime finishedAt);
+    Task Update(RequestEntity entity);
     Task<List<RequestEntity>> GetAll();
+    Task<RequestEntity?> Get(Guid id);
 }

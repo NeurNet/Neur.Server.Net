@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Neur.Server.Net.API.Contracts.Chats;
+using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Application.Services.Contracts.OllamaService;
 using Neur.Server.Net.Core.Entities;
@@ -69,7 +70,9 @@ public static class ChatEndPoints {
     }
 
     private static async Task Generate(Guid id, [FromBody] GenerateRequest request, IChatsRepository repository, 
-        OllamaClient ollamaClient, HttpContext context) {
+        ChatService chatService, ClaimsPrincipal user, HttpContext context) {
+        
+        var userId = Guid.Parse(user.FindFirst("userId")?.Value);
         var chat = await repository.Get(id);
         if (chat == null) {
             context.Response.StatusCode = 404;
@@ -88,15 +91,19 @@ public static class ChatEndPoints {
         context.Response.Headers["Cache-Control"] = "no-cache";
         context.Response.Headers["Connection"] = "keep-alive";
 
-        await foreach (var chunk in ollamaClient.StreamResponse(
-                           new OllamaRequest(chat.Model.ModelName, request.prompt, true)))
-        {
-            // Формат для SSE: каждая строка = одно событие
-            await context.Response.WriteAsync(chunk);
+        try {
+            await foreach (var chunk in chatService.ProcessMessage(userId, id, request.prompt)) {
+                // Формат для SSE: каждая строка = одно событие
+                await context.Response.WriteAsync(chunk);
+                await context.Response.Body.FlushAsync();
+            }
+
             await context.Response.Body.FlushAsync();
         }
-
-        await context.Response.Body.FlushAsync();
+        catch (InvalidOperationException ex) {
+            context.Response.StatusCode = 402;
+            await context.Response.WriteAsync(ex.Message);
+        }
     }
 
     private static async Task<IResult> GetAllUserChats(ClaimsPrincipal user, IChatsRepository repository) {

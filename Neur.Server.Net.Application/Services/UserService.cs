@@ -11,12 +11,12 @@ namespace Neur.Server.Net.Application.Services;
 
 public class UserService : IUserService {
     private readonly IUsersRepository _usersRepository;
-    private readonly ICollegeService _collegeService;
+    private readonly ICollegeClient _collegeClient;
     private readonly IJwtProvider _jwtProvider;
     
-    public UserService(IUsersRepository usersRepository, ICollegeService collegeService,  IJwtProvider jwtProvider) {
+    public UserService(IUsersRepository usersRepository, ICollegeClient collegeClient,  IJwtProvider jwtProvider) {
         _usersRepository = usersRepository;
-        _collegeService = collegeService;
+        _collegeClient = collegeClient;
         _jwtProvider = jwtProvider;
     }
 
@@ -33,17 +33,20 @@ public class UserService : IUserService {
         throw new Exception("UserRole doesn't exist");
     }
     public async Task<string> Login(string username, string password) {
-        var collegeUser = await _collegeService.AuthenticateAsync(username, password);
+        var collegeUser = await _collegeClient.AuthenticateAsync(username, password);
         if (collegeUser == null) {
             throw new NullReferenceException();
         }
-        
-        var user = await _usersRepository.GetByLdapId(username);
-        if (user == null) {
-            //Говнокод
+
+        try {
+            var user = await _usersRepository.GetByLdapId(username);
+            var token = _jwtProvider.GenerateToken(user);
+            return token;
+        }
+        catch (NullReferenceException ex) {
             var name = collegeUser.username.Split()[0];
             var surname = collegeUser.username.Split()[1];
-            
+
             var newUser = UserEntity.Create(
                 id: Guid.NewGuid(),
                 username: collegeUser.id,
@@ -53,9 +56,8 @@ public class UserService : IUserService {
                 tokens: 10
             );
             await _usersRepository.Add(newUser);
-            user = newUser;
+            var token = _jwtProvider.GenerateToken(newUser);
+            return token;
         }
-        var token = _jwtProvider.GenerateToken(user);
-        return token;
     }
 }

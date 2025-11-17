@@ -4,6 +4,7 @@ using Neur.Server.Net.API;
 using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.API.Options;
 using Neur.Server.Net.API.Validators;
+using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Application.Services.Options;
@@ -33,7 +34,11 @@ builder.Services.AddScoped<IRequestsRepository, RequestsRepository>();
 builder.Services.AddScoped<HttpClient>();
 
 builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<ICollegeService, CollegeClient>();
+builder.Services.AddScoped<BillingService>();
+builder.Services.AddScoped<LLMService>();
+builder.Services.AddScoped<ChatService>();
+
+builder.Services.AddScoped<ICollegeClient, CollegeClient>();
 builder.Services.AddScoped<OllamaClient>();
 
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();

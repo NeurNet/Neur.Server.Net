@@ -11,23 +11,33 @@ public class RequestsRepository : IRequestsRepository {
         _db = db;
     }
     
-    public async Task<int> Add(RequestEntity entity) {
+    public async Task<Guid> Add(RequestEntity entity) {
         await _db.Requests.AddAsync(entity);
         await _db.SaveChangesAsync();
         return entity.Id;
     }
 
-    public async Task Update(int id, string response, DateTime finishedAt) {
+    public async Task Update(RequestEntity entity) {
         await _db.Requests
-            .Where(req => req.Id == id)
+            .Where(req => req.Id == entity.Id)
             .ExecuteUpdateAsync(s => s
-                .SetProperty(p => p.Response, response)
-                .SetProperty(p => p.FinishedAt, finishedAt)
+                .SetProperty(p => p.Response, entity.Response)
+                .SetProperty(p => p.StartedAt, entity.StartedAt)
+                .SetProperty(p => p.FinishedAt, entity.FinishedAt)
             );
         await _db.SaveChangesAsync();
     }
 
     public async Task<List<RequestEntity>> GetAll() {
         return await _db.Requests.AsNoTracking().ToListAsync();
+    }
+
+    public async Task<RequestEntity?> Get(Guid id) {
+        return await _db.Requests
+            .Where(x => x.Id == id)
+            .AsNoTracking()
+            .Include(x => x.Chat)
+            .ThenInclude(x => x.Model)
+            .FirstOrDefaultAsync(req => req.Id == id);
     }
 }
