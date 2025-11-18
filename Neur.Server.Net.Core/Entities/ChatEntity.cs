@@ -22,13 +22,13 @@ public class ChatEntity {
         UpdatedAt = updatedAt;
     }
 
-    public static ChatEntity Create(Guid id, Guid modelId, Guid userId, DateTime createdAt, DateTime? updatedAt) {
+    public static ChatEntity Create(Guid id, Guid modelId, Guid userId, DateTime createdAt) {
         return new ChatEntity(
             id,
             modelId,
             userId,
             createdAt,
-            updatedAt
+            null
         );
     }
 }

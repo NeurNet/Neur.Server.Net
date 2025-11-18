@@ -1,5 +1,3 @@
-using Neur.Server.Net.Core.Interfaces;
-
 namespace Neur.Server.Net.Core.Entities;
 
 public class RequestEntity {

@@ -14,9 +14,14 @@ public class BillingService {
     }
 
     public async Task ConsumeTokensAsync(Guid userId, int count) {
-        var user = await _repository.GetById(userId);
-        user.ConsumeTokens(count);
-        await _repository.Update(user);
+        try {
+            var user = await _repository.GetById(userId);
+            user.ConsumeTokens(count);
+            await _repository.Update(user);
+        }
+        catch (InvalidOperationException ex) {
+            throw new BillingException(ex.Message);
+        }
     }
     
     public async Task CreditTokensAsync(Guid creditorId, Guid userId, int count) {

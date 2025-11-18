@@ -1,7 +1,6 @@
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
-using Neur.Server.Net.Core.Interfaces;
 using Neur.Server.Net.Core.Records;
 using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure;

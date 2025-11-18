@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Neur.Server.Net.Core.Entities;
+using Neur.Server.Net.Core.Exeptions;
 using Neur.Server.Net.Core.Repositories;
 
 namespace Neur.Server.Net.Postgres.Repositories;
@@ -12,9 +13,14 @@ public class ChatsRepository : IChatsRepository {
     }
     
     public async Task<Guid> Add(ChatEntity entity) {
-        await _db.Chats.AddAsync(entity);
-        await _db.SaveChangesAsync();
-        return entity.Id;
+        try {
+            await _db.Chats.AddAsync(entity);
+            await _db.SaveChangesAsync();
+            return entity.Id;
+        }
+        catch (DbUpdateException ex) {
+            throw new CreatingEntityException();
+        }
     }
 
     public async Task<List<ChatEntity>> GetAllUserChats(Guid userId) {
@@ -30,6 +36,7 @@ public class ChatsRepository : IChatsRepository {
             await _db.Chats
                 .AsNoTracking()
                 .Where(x => x.Id == id)
+                .Include(x => x.User)
                 .Include(x => x.Model)
                 .FirstOrDefaultAsync();
     }
