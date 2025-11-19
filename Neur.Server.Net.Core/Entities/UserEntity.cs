@@ -9,7 +9,7 @@ public class UserEntity {
     public string Name { get; init; }
     public string Surname { get; init; }
     public UserRole Role { get; init; }
-    public int Tokens { get; set; }
+    public int Tokens { get; private set; }
     public ICollection<ChatEntity> Chats { get; set; }
     private UserEntity() {}
 
@@ -41,5 +41,12 @@ public class UserEntity {
             throw new InvalidOperationException("Tokens must be greater than or equal to count");
         }
         Tokens -= count;
+    }
+
+    public void AddTokens(int count) {
+        if (count <= 0) {
+            throw new InvalidOperationException("Cannot add a token with a negative or neuter amount");
+        }
+        Tokens += count;
     }
 }

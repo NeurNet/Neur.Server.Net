@@ -25,15 +25,23 @@ public class BillingService {
     }
     
     public async Task CreditTokensAsync(Guid creditorId, Guid userId, int count) {
-        var creditor = await _repository.GetById(creditorId);
-        if (creditor.Role is UserRole.Teacher or UserRole.Admin) {
-            var user = await _repository.GetById(userId);
-            if (user.Role is UserRole.Student) {
-                user.Tokens += count;
-                await _repository.Update(user);
+        try {
+            var creditor = await _repository.GetById(creditorId);
+            if (creditor.Role is UserRole.Teacher or UserRole.Admin) {
+                var user = await _repository.GetById(userId);
+                if (user.Role is UserRole.Student) {
+                    user.AddTokens(count);
+                    await _repository.Update(user);
+                }
+
+                throw new UserAccessException(
+                    $"{user.Username} do not have permission to charge tokens to the {creditor.Role.ToString()}");
             }
-            throw new UserAccessException($"{user.Username} do not have permission to charge tokens to the {creditor.Role.ToString()}");
+
+            throw new UserAccessException($"{creditor.Username} do not have permission to charge tokens");
         }
-        throw new UserAccessException($"{creditor.Username} do not have permission to charge tokens");
+        catch (InvalidOperationException ex) {
+            throw new BillingException(ex.Message);
+        }
     }
 }

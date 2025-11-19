@@ -8,6 +8,7 @@ public class ModelEntity {
     public string Name { get; set; }
     
     public string ModelName { get; set; }
+    public string Context {get; set;} = string.Empty;
     public ModelType Type { get; set; }
     public string Version { get; set; }
     public ModelStatus Status { get; set; }
@@ -16,10 +17,11 @@ public class ModelEntity {
     
     private ModelEntity() {}
 
-    private ModelEntity(Guid id, string name, string modelName, ModelType type, string version, ModelStatus status, DateTime? updatedAt, DateTime createdAt) {
+    private ModelEntity(Guid id, string name, string modelName, string context, ModelType type, string version, ModelStatus status, DateTime? updatedAt, DateTime createdAt) {
         Id = id;
         Name = name;
         ModelName = modelName;
+        Context = context;
         Type = type;
         Version = version;
         Status = status;
@@ -27,11 +29,12 @@ public class ModelEntity {
         CreatedAt = createdAt;
     }
 
-    public static ModelEntity Create(Guid id, string name, string modelName, ModelType type, string version, ModelStatus status, DateTime createdAt) {
+    public static ModelEntity Create(Guid id, string name, string modelName, string baseContext, ModelType type, string version, ModelStatus status, DateTime createdAt) {
         return new ModelEntity(
             id,
             name,
             modelName,
+            baseContext,
             type,
             version,
             status,
