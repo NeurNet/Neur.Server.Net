@@ -34,7 +34,6 @@ public static class UserEndPoints {
             var token = await userService.Login(req.username, req.password);
             response.Cookies.Append("auth_token", token, new CookieOptions {
                 HttpOnly = true,
-                Secure = true, // если HTTPS
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTime.Now.AddHours(jwtOptions.ExpiresHours)
             });
