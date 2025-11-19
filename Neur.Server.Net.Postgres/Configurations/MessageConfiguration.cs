@@ -14,6 +14,6 @@ public class MessageConfiguration : IEntityTypeConfiguration<MessageEntity> {
             .HasForeignKey(x => x.ChatId);
         builder.Property(x => x.Content).IsRequired();
         builder.Property(x => x.Role).IsRequired();
-        builder.Property(x => x.CreatedAt).IsRequired();
+        builder.HasIndex(x => x.CreatedAt);
     }
 }

@@ -22,6 +22,7 @@ public class MessagesRepository : IMessagesRepository {
             await _db.Messages
                 .AsNoTracking()
                 .Where(m => m.ChatId == chatId)
+                .OrderBy(m => m.CreatedAt)
                 .ToListAsync();
     }
 
