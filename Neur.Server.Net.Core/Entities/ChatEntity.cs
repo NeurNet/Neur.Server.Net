@@ -8,8 +8,6 @@ public class ChatEntity {
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     
-    public string Context {get; set;} = string.Empty;
-    
     // Навигационные свойства
     public UserEntity User { get; init; }
     public ModelEntity Model { get; private set; }

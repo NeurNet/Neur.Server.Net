@@ -17,8 +17,8 @@ public class ContextManager {
 
     public void AddChatHistory(List<MessageEntity> messages) {
         _sb.AppendLine("CHAT HISTORY:");
-        foreach (var message in messages) {
-            _sb.AppendLine($"- {message.Role.ToString()}: {message.Content}");
+        for (int i = 0; i < messages.Count; i++) {
+            _sb.AppendLine($"[MESSAGE %{i}] {messages[i].Role.ToString()}: {messages[i].Content}[/MESSAGE]");
         }
     }
 

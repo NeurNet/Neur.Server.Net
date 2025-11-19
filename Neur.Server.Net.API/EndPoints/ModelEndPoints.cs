@@ -39,6 +39,7 @@ public static class ModelEndPoints {
                     id: Guid.NewGuid(),
                     name: req.name,
                     modelName: req.model,
+                    req.context ?? "",
                     type: Enum.Parse<ModelType>(req.type),
                     version: req.version ?? "0.1",
                     status: Enum.Parse<ModelStatus>(req.status),

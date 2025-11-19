@@ -46,8 +46,9 @@ public class ChatService {
         if (chat.User.Id == user.Id) {
             await _chatsRepository.Delete(chatId);
         }
-        
-        throw new NullReferenceException();
+        else {
+            throw new NullReferenceException();   
+        }
     }
 
     public async Task<List<MessageEntity>> GetChatMessagesAsync(Guid chatId, Guid userId) {
@@ -62,7 +63,9 @@ public class ChatService {
             var messages = await _messagesRepository.GetChatMessages(chatId);
             return messages;   
         }
-        throw new NullReferenceException();
+        else {
+            throw new NullReferenceException();   
+        }
     }
     
     public async IAsyncEnumerable<string> ProcessMessageAsync(Guid userId, Guid chatId, string message) {

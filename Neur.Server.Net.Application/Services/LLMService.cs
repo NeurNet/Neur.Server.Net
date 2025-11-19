@@ -10,23 +10,26 @@ namespace Neur.Server.Net.Application.Services;
 public class LLMService {
     private readonly OllamaClient _client;
     private readonly IMessagesRepository _messagesRepository;
-    public LLMService(OllamaClient client, IMessagesRepository repository) {
+    private readonly IModelsRepository _modelsRepository;
+    public LLMService(OllamaClient client, IMessagesRepository repository, IModelsRepository modelsRepository) {
         _client = client;
         _messagesRepository = repository;
+        _modelsRepository = modelsRepository;
     }
     
-    private async Task<string> ReadContext(Guid chatId, string currentMessage) {
+    private async Task<string> ReadContext(Guid chatId, string currentMessage, string baseContext) {
         List<MessageEntity> messages = await _messagesRepository.GetChatMessages(chatId);
         var contextManager = new ContextManager();
         
-        contextManager.AddBaseContext("Тебя зовут NeoBot, твоя цель - помощь по программированию");
+        contextManager.AddBaseContext(baseContext);
         contextManager.AddChatHistory(messages);
         contextManager.AddCurrentPrompt(currentMessage);
         return contextManager.GetContext();
     }
 
     public async IAsyncEnumerable<string> StreamOllamaResponse(ChatEntity chat, string promt) {
-        var context = await ReadContext(chat.Id, promt);
+        var model = await _modelsRepository.Get(chat.ModelId);
+        var context = await ReadContext(chat.Id, promt, model.Context);
         var ollamaRequest = new OllamaRequest(chat.Model.ModelName, context, true);
         Console.WriteLine(ollamaRequest.prompt);
         var userMessage = MessageEntity.Create(

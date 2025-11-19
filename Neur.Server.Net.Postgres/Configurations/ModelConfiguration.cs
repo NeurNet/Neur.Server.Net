@@ -9,6 +9,8 @@ public class ModelConfiguration : IEntityTypeConfiguration<ModelEntity> {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Name).HasMaxLength(255).IsRequired();
+        builder.Property(x => x.ModelName).HasMaxLength(255).IsRequired();
+        builder.Property(x => x.Context).HasMaxLength(2000);
         builder.Property(x => x.Type).IsRequired();
         builder.Property(x => x.Status).IsRequired();
         builder.Property(x => x.UpdatedAt);
