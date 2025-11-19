@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.API.Contracts.Users;
+using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure;
@@ -26,8 +27,6 @@ public static class UserEndPoints {
         endpoints.MapPost("/auth/logout", Logout)
             .WithSummary("Выход из сервиса")
             .WithDescription("Удаляет Cookie <b>'auth_token'</b>");
-        endpoints.MapGet("/tokens/", GetTokens)
-            .WithSummary("Получить количество токенов пользоваетеля");
         
         return endpoints;
     }
@@ -57,15 +56,10 @@ public static class UserEndPoints {
         return Results.Ok();
     }
     
-    private static async Task<IResult> Auth(ClaimsPrincipal user) {
-        var id = user.FindFirst("userId")?.Value;
-        var username = user.FindFirst("username")?.Value;
+    private static async Task<IResult> Auth(ClaimsPrincipal claimsPrincipal, IUsersRepository userRepository) {
+        var cookie = claimsPrincipal.ToCurrentUser();
+        var user = await userRepository.GetById(cookie.userId);
         
-        return Results.Json(new UserAuthResponse(id, username));
-    }
-
-    private static async Task<IResult> GetTokens([FromQuery] Guid userId, IUsersRepository repository) {
-        var user = await repository.GetById(userId);
-        return Results.Json(new UserTokensResponse(user.Id, user.Tokens));
+        return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, user.Tokens));
     }
 }
