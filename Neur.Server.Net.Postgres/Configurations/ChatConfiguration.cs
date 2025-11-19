@@ -12,5 +12,10 @@ public class ChatConfiguration : IEntityTypeConfiguration<ChatEntity> {
         builder.HasOne(x => x.Model).WithMany().HasForeignKey(x => x.ModelId).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt);
+        builder
+            .HasOne(x => x.Model)
+            .WithMany()
+            .HasForeignKey(x => x.ModelId)
+            .IsRequired();
     }
 }

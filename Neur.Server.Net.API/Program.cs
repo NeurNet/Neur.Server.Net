@@ -4,6 +4,7 @@ using Neur.Server.Net.API;
 using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.API.Options;
 using Neur.Server.Net.API.Validators;
+using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Application.Services.Options;
@@ -21,20 +22,25 @@ builder.Services.AddSwaggerApi();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(nameof(JwtOptions)));
 builder.Services.Configure<CollegeServiceOptions>(builder.Configuration.GetSection("Services").GetSection(
-    nameof(CollegeService)));
-builder.Services.Configure<OllamaServiceOptions>(builder.Configuration.GetSection("Services").GetSection(nameof(OllamaService)));
+    nameof(CollegeClient)));
+builder.Services.Configure<OllamaServiceOptions>(builder.Configuration.GetSection("Services").GetSection(nameof(OllamaClient)));
 
 builder.Services.AddDbContext<ApplicationDbContext>();
 builder.Services.AddScoped<IUsersRepository, UsersRepository>();
 builder.Services.AddScoped<IModelsRepository, ModelsRepository>();
 builder.Services.AddScoped<IChatsRepository, ChatsRepository>();
 builder.Services.AddScoped<IRequestsRepository, RequestsRepository>();
+builder.Services.AddScoped<IMessagesRepository, MessagesRepository>();
 
 builder.Services.AddScoped<HttpClient>();
 
 builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<ICollegeService, CollegeService>();
-builder.Services.AddScoped<OllamaService>();
+builder.Services.AddScoped<BillingService>();
+builder.Services.AddScoped<LLMService>();
+builder.Services.AddScoped<ChatService>();
+
+builder.Services.AddScoped<ICollegeClient, CollegeClient>();
+builder.Services.AddScoped<OllamaClient>();
 
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 

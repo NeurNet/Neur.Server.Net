@@ -1,29 +1,32 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.API.Contracts.Users;
+using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.Application.Services;
+using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure;
 
 namespace Neur.Server.Net.API.EndPoints;
 
 public static class UserEndPoints {
     public static IEndpointRouteBuilder MapUserEndPoints(this IEndpointRouteBuilder app) {
-        var endpoints = app.MapGroup("/api/users/auth").WithTags("Users");
+        var endpoints = app.MapGroup("/api/users").WithTags("Users");
         
-        endpoints.MapPost("/login", Login)
+        endpoints.MapPost("/auth/login", Login)
             .WithSummary("Авторизация")
             .WithDescription("Сохраняет JWT токен в Cookie <b>'auth_token'</b>, также возвращает сам токен")
             .Produces<UserLoginResponse>(200)
             .Produces(401);
-        endpoints.MapPost("/logout", Logout)
-            .WithSummary("Выход из сервиса")
-            .WithDescription("Удаляет Cookie <b>'auth_token'</b>");
-        endpoints.MapGet(String.Empty, Auth)
+        endpoints.MapGet("/auth", Auth)
             .WithSummary("Аутентификация")
             .WithDescription("Проверяет <b>Cookie</b> в запросе, если секретный ключ соответствует действительному - возвращает пользователя")
             .Produces<UserAuthResponse>(200, "application/json")
             .Produces(401)
             .RequireAuthorization();
+        endpoints.MapPost("/auth/logout", Logout)
+            .WithSummary("Выход из сервиса")
+            .WithDescription("Удаляет Cookie <b>'auth_token'</b>");
         
         return endpoints;
     }
@@ -53,11 +56,10 @@ public static class UserEndPoints {
         return Results.Ok();
     }
     
-    private static async Task<IResult> Auth(ClaimsPrincipal user) {
-        var id = user.FindFirst("userId")?.Value;
-        var username = user.FindFirst("username")?.Value;
-        var tokens = user.FindFirst("tokens")?.Value;
+    private static async Task<IResult> Auth(ClaimsPrincipal claimsPrincipal, IUsersRepository userRepository) {
+        var cookie = claimsPrincipal.ToCurrentUser();
+        var user = await userRepository.GetById(cookie.userId);
         
-        return Results.Json(new UserAuthResponse(id, username, tokens));
+        return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, user.Tokens));
     }
 }

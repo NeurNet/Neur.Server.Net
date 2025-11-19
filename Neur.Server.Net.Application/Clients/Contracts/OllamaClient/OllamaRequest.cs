@@ -1,4 +1,4 @@
-namespace Neur.Server.Net.Application.Services.Contracts.OllamaService;
+namespace Neur.Server.Net.Application.Clients.Contracts.OllamaClient;
 
 public record OllamaRequest(
     string model,

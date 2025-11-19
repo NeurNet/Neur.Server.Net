@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Neur.Server.Net.Core.Interfaces;
 
 namespace Neur.Server.Net.API.Contracts.Models;
 

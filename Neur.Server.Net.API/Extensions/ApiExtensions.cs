@@ -46,6 +46,6 @@ public static class ApiExtensions {
         app.MapUserEndPoints();
         app.MapModelsEndPoints();
         app.MapChatsEndPoints();
-        app.MapRequestEndPoints();
+        // app.MapRequestEndPoints();
     }
 }
