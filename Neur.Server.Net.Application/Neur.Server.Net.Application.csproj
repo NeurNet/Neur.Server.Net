@@ -11,8 +11,4 @@
       <ProjectReference Include="..\Neur.Server.Net.Postgres\Neur.Server.Net.Postgres.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Services\Data\" />
-    </ItemGroup>
-
 </Project>
