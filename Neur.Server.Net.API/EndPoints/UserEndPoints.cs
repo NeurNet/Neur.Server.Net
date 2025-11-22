@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.API.Contracts.Users;
@@ -59,7 +60,9 @@ public static class UserEndPoints {
     private static async Task<IResult> Auth(ClaimsPrincipal claimsPrincipal, IUsersRepository userRepository) {
         var cookie = claimsPrincipal.ToCurrentUser();
         var user = await userRepository.GetById(cookie.userId);
+
+        var userRole = user.Role.ToString().ToLower();
         
-        return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, user.Tokens));
+        return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, userRole, user.Tokens));
     }
 }
