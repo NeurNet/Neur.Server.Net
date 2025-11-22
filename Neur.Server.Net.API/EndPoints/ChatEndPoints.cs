@@ -36,11 +36,7 @@ public static class ChatEndPoints {
             .WithSummary("Получить чат")
             .Produces(401)
             .Produces(404)
-            .Produces<GetChatResponse>(200);
-
-        endpoints.MapGet("/{id}/messages", GetChatMessages)
-            .WithSummary("Получить историю чата")
-            .Produces<List<GetMessageResponse>>(200, "application/json");
+            .Produces<GetFullChatResponse>(200);
         
         endpoints.MapPost("/{id}/generate", Generate)
             .WithSummary("Сгенерировать ответ от нейросети")
@@ -121,30 +117,24 @@ public static class ChatEndPoints {
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> Get(Guid id, IChatsRepository repository) {
+    private static async Task<IResult> Get(ClaimsPrincipal claimsPrincipal, Guid id, IChatsRepository repository, ChatService chatService) {
+        var user = claimsPrincipal.ToCurrentUser();
         var chat = await repository.Get(id);
         if (chat == null) {
             return Results.NotFound("Chat not found");
         }
-        return Results.Ok(new GetChatResponse(chat.Id, chat.ModelId, chat.Model.Name, chat.Model.ModelName, chat.CreatedAt, chat.UpdatedAt));
-    }
 
-    private static async Task<IResult> GetChatMessages(Guid id, ClaimsPrincipal claimsPrincipal, ChatService chatService) {
-        try {
-            var user = claimsPrincipal.ToCurrentUser();
-            var messages = await chatService.GetChatMessagesAsync(id, user.userId);
-            var result = messages.Select(message =>
-                new GetMessageResponse(message.CreatedAt, message.Role, message.Content)
-            );
-
-            return Results.Ok(result);
-        }
-        catch (NullReferenceException) {
-            return Results.NotFound();
-        }
-        catch (Exception) {
-            return Results.InternalServerError();
-        }
+        var messages = await chatService.GetChatMessagesAsync(chat.Id, user.userId);
+        var responseMessages = messages.Select(message => new MessageResponse(
+            message.Id,
+            message.ChatId,
+            message.CreatedAt,
+            message.Role,
+            message.Content
+        ));
+        
+        return Results.Ok(new GetFullChatResponse(chat.Id, chat.ModelId, chat.Model.Name, chat.Model.ModelName,
+            chat.CreatedAt, chat.UpdatedAt, responseMessages));
     }
 
     private static async Task<IResult> Delete(ClaimsPrincipal claimsPrincipal, Guid id, ChatService chatService) {
