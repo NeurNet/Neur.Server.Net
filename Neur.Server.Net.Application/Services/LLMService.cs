@@ -31,18 +31,23 @@ public class LLMService {
         var model = await _modelsRepository.Get(chat.ModelId);
         var context = await ReadContext(chat.Id, promt, model.Context);
         var ollamaRequest = new OllamaRequest(chat.Model.ModelName, context, true);
-        Console.WriteLine(ollamaRequest.prompt);
-        var userMessage = MessageEntity.Create(
-            chat.Id,
-            DateTime.UtcNow,
-            MessageRole.User,
-            promt
-        );
-        await _messagesRepository.Add(userMessage);
+        
+        bool streamStarted = false;
         
         var requestResponse = "";
         
         await foreach (var response in _client.StreamResponse(ollamaRequest)) {
+            if (!streamStarted) {
+                Console.WriteLine(ollamaRequest.prompt);
+                var userMessage = MessageEntity.Create(
+                    chat.Id,
+                    DateTime.UtcNow,
+                    MessageRole.User,
+                    promt
+                );
+                await _messagesRepository.Add(userMessage);
+                streamStarted = true;
+            }
             requestResponse += response;
             yield return response;
         }

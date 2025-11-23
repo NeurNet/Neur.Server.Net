@@ -68,6 +68,7 @@ public class ChatService {
         }
     }
     
+    // Отсутствие транзакци!
     public async IAsyncEnumerable<string> ProcessMessageAsync(Guid userId, Guid chatId, string message) {
         var user = await _usersRepository.GetById(userId);
         var chat = await _chatsRepository.Get(chatId);

@@ -19,23 +19,11 @@ public class OllamaClient {
         _requestsRepository = repository;
     }
 
-    public async IAsyncEnumerable<string> StreamResponse(OllamaRequest request) {
-        var requestBody = JsonSerializer.Serialize(request);
-        var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
-        var req = new HttpRequestMessage(HttpMethod.Post, $"{_options.url}/api/generate")
-        {
-            Content = content
-        };
-
-        using var response = await _httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
-        response.EnsureSuccessStatusCode();
-
+    private async IAsyncEnumerable<string> ReadStream(HttpResponseMessage response) {
         await using var responseStream = await response.Content.ReadAsStreamAsync();
         using var reader = new StreamReader(responseStream);
 
-        while (!reader.EndOfStream)
-        {
+        while (!reader.EndOfStream) {
             var line = await reader.ReadLineAsync();
             if (string.IsNullOrWhiteSpace(line))
                 continue;
@@ -49,5 +37,23 @@ public class OllamaClient {
             if (root.TryGetProperty("done", out var done) && done.GetBoolean())
                 yield break;
         }
+    }
+
+    public async IAsyncEnumerable<string> StreamResponse(OllamaRequest request) {
+        var requestBody = JsonSerializer.Serialize(request);
+        var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+        var req = new HttpRequestMessage(HttpMethod.Post, $"{_options.url}/api/generate") {
+            Content = content
+        };
+        
+        var cts = new CancellationTokenSource();
+        cts.CancelAfter(TimeSpan.FromSeconds(20));
+        
+        using var response = await _httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+        response.EnsureSuccessStatusCode();
+        
+        await foreach (var chunk in ReadStream(response).WithCancellation(cts.Token))
+            yield return chunk;
     }
 }

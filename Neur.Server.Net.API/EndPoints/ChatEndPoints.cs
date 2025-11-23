@@ -104,6 +104,10 @@ public static class ChatEndPoints {
             context.Response.StatusCode = 402;
             await context.Response.WriteAsync(ex.Message);
         }
+        catch (OperationCanceledException) {
+            context.Response.StatusCode = 500;
+            await context.Response.WriteAsync("Timeout error: operation was canceled");
+        }
     }
 
     private static async Task<IResult> GetAllUserChats(ClaimsPrincipal claimsPrincipal, IChatsRepository repository) {
