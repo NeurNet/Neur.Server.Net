@@ -20,9 +20,9 @@ public class ChatEntity {
         UpdatedAt = updatedAt;
     }
 
-    public static ChatEntity Create(Guid id, Guid modelId, Guid userId, DateTime createdAt) {
+    public static ChatEntity Create( Guid modelId, Guid userId, DateTime createdAt) {
         return new ChatEntity(
-            id,
+            Guid.NewGuid(), 
             modelId,
             userId,
             createdAt,
