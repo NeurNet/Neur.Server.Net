@@ -1,26 +1,29 @@
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure;
+using Neur.Server.Net.Postgres;
 
 namespace Neur.Server.Net.Application.Services;
 
 public class ChatService {
     private readonly BillingService _billingService;
+    private readonly LLMService _llmService;
+    private readonly ApplicationDbContext _dbContext;
     private readonly IMessagesRepository _messagesRepository;
     private readonly IUsersRepository _usersRepository;
     private readonly IChatsRepository _chatsRepository;
-    private readonly LLMService _llmService;
-    public ChatService(BillingService billingService, IChatsRepository chatsRepository, IMessagesRepository messagesRepository, IUsersRepository usersRepository, LLMService llmService) {
+    public ChatService(BillingService billingService, LLMService llmService, ApplicationDbContext dbContext, IChatsRepository chatsRepository, IMessagesRepository messagesRepository, IUsersRepository usersRepository) {
         _billingService = billingService;
+        _llmService = llmService;
+        _dbContext = dbContext;
         _chatsRepository = chatsRepository;
         _messagesRepository = messagesRepository;
         _usersRepository = usersRepository;
-        _llmService = llmService;
     }
     public async Task<ChatEntity> CreateChatAsync(Guid userId, Guid modelId) {
         var chat = ChatEntity.Create(
-            id:  Guid.NewGuid(),
             userId: userId,
             modelId: modelId,
             createdAt:  DateTime.UtcNow
@@ -68,15 +71,32 @@ public class ChatService {
         }
     }
     
-    // Отсутствие транзакци!
+
     public async IAsyncEnumerable<string> ProcessMessageAsync(Guid userId, Guid chatId, string message) {
-        var user = await _usersRepository.GetById(userId);
-        var chat = await _chatsRepository.Get(chatId);
-        
-        await _billingService.ConsumeTokensAsync(user.Id, 1);
-        
-        await foreach (var chunk in _llmService.StreamOllamaResponse(chat, message)) {
-            yield return chunk;
+        var user = await _dbContext.Users.FindAsync(userId) ?? throw new NullReferenceException();
+        var chat = await _chatsRepository.Get(chatId) ??  throw new NullReferenceException();
+
+        if (user.Tokens <= 0) {
+            throw new BillingException("User has no tokens");
         }
+        
+        var stream = _llmService.StreamOllamaResponse(chat, message).GetAsyncEnumerator();
+        
+        if (!await stream.MoveNextAsync())
+            yield break; 
+
+        var firstChunk = stream.Current;
+        
+        using (var tx = await _dbContext.Database.BeginTransactionAsync())
+        {
+            user.ConsumeTokens(1);
+            await _dbContext.SaveChangesAsync();
+            await tx.CommitAsync();
+        }
+        
+        yield return firstChunk;
+        
+        while (await stream.MoveNextAsync())
+            yield return stream.Current;
     }
 }
