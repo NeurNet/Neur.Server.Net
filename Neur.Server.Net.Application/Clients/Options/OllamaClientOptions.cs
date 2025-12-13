@@ -1,5 +1,5 @@
-namespace Neur.Server.Net.Application.Services.Options;
+namespace Neur.Server.Net.Application.Clients.Options;
 
-public class OllamaServiceOptions {
+public class OllamaClientOptions {
     public string url { get; set; } = string.Empty;
 }

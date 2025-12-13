@@ -1,5 +1,9 @@
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Neur.Server.Net.Application.Exeptions;
+using Neur.Server.Net.Application.Services.Background;
+using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure;
@@ -8,22 +12,30 @@ using Neur.Server.Net.Postgres;
 namespace Neur.Server.Net.Application.Services;
 
 public class ChatService {
-    private readonly BillingService _billingService;
-    private readonly LLMService _llmService;
     private readonly ApplicationDbContext _dbContext;
+    private readonly GenerationService _generationService;
+    private readonly MessageService _messageService;
     private readonly IMessagesRepository _messagesRepository;
-    private readonly IUsersRepository _usersRepository;
     private readonly IChatsRepository _chatsRepository;
-    public ChatService(BillingService billingService, LLMService llmService, ApplicationDbContext dbContext, IChatsRepository chatsRepository, IMessagesRepository messagesRepository, IUsersRepository usersRepository) {
-        _billingService = billingService;
-        _llmService = llmService;
+    public ChatService(ApplicationDbContext dbContext, GenerationService generationService,
+        IChatsRepository chatsRepository, IMessagesRepository messagesRepository, MessageService messageService) {
         _dbContext = dbContext;
+        _generationService = generationService;
         _chatsRepository = chatsRepository;
         _messagesRepository = messagesRepository;
-        _usersRepository = usersRepository;
+        _messageService = messageService;
+    }
+    private async Task<string> ReadContext(Guid chatId, string currentMessage, string baseContext) {
+        List<MessageEntity> messages = await _messagesRepository.GetChatMessages(chatId);
+        var contextManager = new ContextManager();
+        
+        contextManager.AddBaseContext(baseContext);
+        contextManager.AddChatHistory(messages);
+        contextManager.AddCurrentPrompt(currentMessage);
+        return contextManager.GetContext();
     }
     public async Task<ChatEntity> CreateChatAsync(Guid userId, Guid modelId) {
-        var chat = ChatEntity.Create(
+        var chat = new ChatEntity(
             userId: userId,
             modelId: modelId,
             createdAt:  DateTime.UtcNow
@@ -37,66 +49,58 @@ public class ChatService {
         throw new Exception("Error getting the chat after create");
     }
 
-    public async Task DeleteChatAsync(Guid userId, Guid chatId) {
-        var user = await _usersRepository.GetById(userId);
-        var chat = await _chatsRepository.Get(chatId);
-        
+    public async Task DeleteChatAsync(Guid chatId, Guid userId) {
+        var chat = await _dbContext.Chats.Where(x => x.Id == chatId && x.UserId == userId).FirstOrDefaultAsync();
         if (chat == null) {
-            throw new NullReferenceException();
+            throw new NotFoundException("Chat not found");
         }
         
-        //!!Скорее всего не хорошо!!
-        if (chat.User.Id == user.Id) {
-            await _chatsRepository.Delete(chatId);
-        }
-        else {
-            throw new NullReferenceException();   
-        }
+        _dbContext.Chats.Remove(chat);
+        await _dbContext.SaveChangesAsync();
     }
 
     public async Task<List<MessageEntity>> GetChatMessagesAsync(Guid chatId, Guid userId) {
-        var chat = await _chatsRepository.Get(chatId);
-        var user = await _usersRepository.GetById(userId);
+        var chat = await _dbContext.Chats.Where(x => x.Id == chatId && x.UserId == userId).ToListAsync();
+        if (chat == null || chat.Count == 0) {
+            throw new NotFoundException("Chat not found");
+        }
         
-        if (chat == null) {
-            throw new NullReferenceException();
-        }
-
-        if (chat.User.Id == user.Id) {
-            var messages = await _messagesRepository.GetChatMessages(chatId);
-            return messages;   
-        }
-        else {
-            throw new NullReferenceException();   
-        }
+        var messages = await _messagesRepository.GetChatMessages(chatId);
+        return messages;
     }
     
-
-    public async IAsyncEnumerable<string> ProcessMessageAsync(Guid userId, Guid chatId, string message) {
-        var user = await _dbContext.Users.FindAsync(userId) ?? throw new NullReferenceException();
-        var chat = await _chatsRepository.Get(chatId) ??  throw new NullReferenceException();
-
+    public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt) {
+        var user = await _dbContext.Users
+            .AsNoTracking()
+            .Where(x => x.Id == userId)
+            .FirstOrDefaultAsync();
+        var chat = await _dbContext.Chats
+            .AsNoTracking()
+            .Where(x => x.Id == chatId && x.UserId == userId)
+            .Include(x => x.Model)
+            .FirstOrDefaultAsync();
+        
+        if (user == null || chat == null) {
+            throw new NotFoundException();
+        }
         if (user.Tokens <= 0) {
-            throw new BillingException("User has no tokens");
+            throw new BillingException("Not enough tokens");
         }
         
-        var stream = _llmService.StreamOllamaResponse(chat, message).GetAsyncEnumerator();
+        var cts = new CancellationTokenSource();
+        cts.CancelAfter(TimeSpan.FromSeconds(30));
         
-        if (!await stream.MoveNextAsync())
-            yield break; 
-
-        var firstChunk = stream.Current;
+        await _messageService.SaveMessageAsync(chat, MessageRole.User, prompt);
+        var context = await ReadContext(chatId, prompt, chat.Model.Context);
+        var stream = await _generationService.StreamGeneration(chat.ModelId, userId, context, cts.Token);
         
-        using (var tx = await _dbContext.Database.BeginTransactionAsync())
-        {
-            user.ConsumeTokens(1);
-            await _dbContext.SaveChangesAsync();
-            await tx.CommitAsync();
+        using var reader = new StreamReader(stream);
+        string? line;
+        while ((line = await reader.ReadLineAsync()) != null) {
+            using var jsonDoc = JsonDocument.Parse(line);
+            var content = jsonDoc.RootElement.GetProperty("response").GetString();
+            
+            yield return content;
         }
-        
-        yield return firstChunk;
-        
-        while (await stream.MoveNextAsync())
-            yield return stream.Current;
     }
 }

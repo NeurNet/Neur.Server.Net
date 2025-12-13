@@ -12,13 +12,13 @@ public class GenerationRequestsRepository : IGenerationRequestsRepository {
     }
     
     public async Task<Guid> Add(GenerationRequestEntity entity) {
-        await _db.Requests.AddAsync(entity);
+        await _db.GenerationRequests.AddAsync(entity);
         await _db.SaveChangesAsync();
         return entity.Id;
     }
 
     public async Task Update(GenerationRequestEntity entity) {
-        await _db.Requests
+        await _db.GenerationRequests
             .Where(req => req.Id == entity.Id)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(p => p.StartedAt, entity.StartedAt)
@@ -28,11 +28,11 @@ public class GenerationRequestsRepository : IGenerationRequestsRepository {
     }
 
     public async Task<List<GenerationRequestEntity>> GetAll() {
-        return await _db.Requests.AsNoTracking().ToListAsync();
+        return await _db.GenerationRequests.AsNoTracking().ToListAsync();
     }
 
     public async Task<GenerationRequestEntity?> Get(Guid id) {
-        return await _db.Requests
+        return await _db.GenerationRequests
             .Where(x => x.Id == id)
             .AsNoTracking()
             .Include(x => x.User)

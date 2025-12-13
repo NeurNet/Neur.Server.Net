@@ -1,12 +1,11 @@
+using Neur.Server.Net.Core.Abstractions;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Records;
 
 namespace Neur.Server.Net.Core.Entities;
 
-public class ModelEntity {
-    public Guid Id { get; init; }
+public class ModelEntity : Entity {
     public string Name { get; set; }
-    
     public string ModelName { get; set; }
     public string Context {get; set;} = string.Empty;
     public ModelType Type { get; set; }
@@ -17,29 +16,16 @@ public class ModelEntity {
     
     private ModelEntity() {}
 
-    private ModelEntity(Guid id, string name, string modelName, string context, ModelType type, string version, ModelStatus status, DateTime? updatedAt, DateTime createdAt) {
-        Id = id;
+    public ModelEntity(string name, string modelName, string context, ModelType type, string version, 
+        ModelStatus status, DateTime createdAt, DateTime? updatedAt = null) {
+        Id = Guid.NewGuid();
         Name = name;
         ModelName = modelName;
         Context = context;
         Type = type;
         Version = version;
         Status = status;
-        UpdatedAt = updatedAt;
         CreatedAt = createdAt;
-    }
-
-    public static ModelEntity Create(Guid id, string name, string modelName, string baseContext, ModelType type, string version, ModelStatus status, DateTime createdAt) {
-        return new ModelEntity(
-            id,
-            name,
-            modelName,
-            baseContext,
-            type,
-            version,
-            status,
-            null,
-            createdAt
-        );
+        UpdatedAt = updatedAt;
     }
 }

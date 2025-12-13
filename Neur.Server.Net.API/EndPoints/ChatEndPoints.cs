@@ -81,12 +81,20 @@ public static class ChatEndPoints {
 
         try {
 
-            await foreach (var chunk in  chatService.ProcessPromptAsync(id, user.userId, request.prompt)) {
+            await foreach (var chunk in chatService.ProcessPromptAsync(id, user.userId, request.prompt)) {
                 await context.Response.WriteAsync(chunk);
                 await context.Response.Body.FlushAsync();
             }
 
             await context.Response.Body.FlushAsync();
+        }
+        catch (NotFoundException ex) {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            await context.Response.WriteAsync(ex.Message);
+        }
+        catch (QueueException ex) {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsync(ex.Message);
         }
         catch (BillingException ex) {
             context.Response.StatusCode = 402;
