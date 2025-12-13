@@ -35,8 +35,7 @@ public static class ModelEndPoints {
             var result = validator.Validate(req);
 
             if (result.IsValid) {
-                var model = ModelEntity.Create(
-                    id: Guid.NewGuid(),
+                var model = new ModelEntity(
                     name: req.name,
                     modelName: req.model,
                     req.context ?? "",

@@ -7,6 +7,7 @@ using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Data;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Services;
+using Neur.Server.Net.Application.Services.Background;
 using Neur.Server.Net.Application.Services.Contracts.OllamaService;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Exeptions;
@@ -68,32 +69,19 @@ public static class ChatEndPoints {
         }
     }
 
-    private static async Task Generate(Guid id, [FromBody] GenerateRequest request, IChatsRepository repository, 
+    private static async Task Generate(Guid id, [FromBody] GenerateRequest request, GenerationQueueService generationQueueService, IChatsRepository repository, 
         ChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context) {
         
         var user = claimsPrincipal.ToCurrentUser();
-        var chat = await repository.Get(id);
-        
-        if (chat == null) {
-            context.Response.StatusCode = 404;
-            await context.Response.WriteAsync("Chat not found");
-            return;
-        }
-        if (request.prompt.Length == 0) {
-            context.Response.StatusCode = 400;
-            await context.Response.WriteAsync("Chat not found");
-            return;
-        }
         
         // Готовим ответ для SSE
-        context.Response.StatusCode = 200;
         context.Response.ContentType = "text/event-stream";
         context.Response.Headers["Cache-Control"] = "no-cache";
         context.Response.Headers["Connection"] = "keep-alive";
 
         try {
-            await foreach (var chunk in chatService.ProcessMessageAsync(user.userId, id, request.prompt)) {
-                // Формат для SSE: каждая строка = одно событие
+
+            await foreach (var chunk in  chatService.ProcessPromptAsync(id, user.userId, request.prompt)) {
                 await context.Response.WriteAsync(chunk);
                 await context.Response.Body.FlushAsync();
             }
@@ -107,6 +95,10 @@ public static class ChatEndPoints {
         catch (OperationCanceledException) {
             context.Response.StatusCode = 500;
             await context.Response.WriteAsync("Timeout error: operation was canceled");
+        }
+        catch (Exception ex) {
+            context.Response.StatusCode = 500;
+            await context.Response.WriteAsync(ex.Message);
         }
     }
 
@@ -144,7 +136,7 @@ public static class ChatEndPoints {
     private static async Task<IResult> Delete(ClaimsPrincipal claimsPrincipal, Guid id, ChatService chatService) {
         try {
             var user = claimsPrincipal.ToCurrentUser();
-            await chatService.DeleteChatAsync(user.userId, id);
+            await chatService.DeleteChatAsync(id, user.userId);
             return Results.Ok(id);
         }
         catch (NullReferenceException) {

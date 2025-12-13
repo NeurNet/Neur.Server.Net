@@ -5,7 +5,7 @@ namespace Neur.Server.Net.API.EndPoints;
 public static class RequestEndPoints {
     public static IEndpointRouteBuilder MapRequestEndPoints(this IEndpointRouteBuilder app) {
         var endpoints = app.MapGroup("/api/requests")
-            .WithTags("Requests")
+            .WithTags("GenerationRequests")
             .RequireAuthorization();
 
         endpoints.MapPost(String.Empty, GetAll)
@@ -14,7 +14,7 @@ public static class RequestEndPoints {
         return endpoints;
     }
 
-    private static async Task<IResult> GetAll(IRequestsRepository repository) {
+    private static async Task<IResult> GetAll(IGenerationRequestsRepository repository) {
         var requests = await repository.GetAll();
         return Results.Ok(requests);
     }
