@@ -4,6 +4,7 @@ using System.Text.Json;
 using Neur.Server.Net.Application.Data;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Core.Data;
+using Neur.Server.Net.Infrastructure.Extensions;
 
 namespace Neur.Server.Net.API.Extensions;
 

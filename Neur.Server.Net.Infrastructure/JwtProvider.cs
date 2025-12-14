@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Neur.Server.Net.Core.Entities;
+using Neur.Server.Net.Infrastructure.Extensions;
 using Neur.Server.Net.Infrastructure.Interfaces;
 
 namespace Neur.Server.Net.Infrastructure;
@@ -19,7 +20,8 @@ public class JwtProvider : IJwtProvider {
         Claim[] claims = new[]
         {
             new Claim("userId", user.Id.ToString()),
-            new Claim("username", user.Username)
+            new Claim("username", user.Username),
+            new Claim("role", user.Role.ToClaimValue())
         };
         
         var signingCredentials = new SigningCredentials(

@@ -44,7 +44,7 @@ public class ModelService : IModelService {
         var models = await _context.Models
             .AsNoTracking()
             .Where(x => user.Role == UserRole.Admin || x.Status == ModelStatus.open)
-            .ToArrayAsync();
+            .ToListAsync();
         
         return models;
     }
