@@ -63,7 +63,12 @@ public class ChatService : IChatService {
     }
 
     public async Task<IEnumerable<ChatWithMessagesDto>> GetChatMessagesAsync(Guid chatId, Guid userId) {
-        var chat = await _dbContext.Chats.Where(x => x.Id == chatId && x.UserId == userId).ToListAsync();
+        var chat = await _dbContext.Chats
+            .AsNoTracking()
+            .Where(x => x.Id == chatId && x.UserId == userId)
+            .Include(x => x.Model)
+            .ToListAsync();
+        
         if (chat == null || chat.Count == 0) {
             throw new NotFoundException("Chat not found");
         }
