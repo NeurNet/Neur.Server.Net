@@ -17,7 +17,8 @@ namespace Neur.Server.Net.Postgres.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    ModelName = table.Column<string>(type: "text", nullable: false),
+                    ModelName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Context = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     Type = table.Column<int>(type: "integer", nullable: false),
                     Version = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
@@ -73,22 +74,51 @@ namespace Neur.Server.Net.Postgres.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Requests",
+                name: "GenerationRequests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ModelId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TokenCost = table.Column<int>(type: "integer", nullable: false),
+                    Prompt = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    FinishedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GenerationRequests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GenerationRequests_Models_ModelId",
+                        column: x => x.ModelId,
+                        principalTable: "Models",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_GenerationRequests_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Messages",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ChatId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Prompt = table.Column<string>(type: "character varying(3000)", maxLength: 3000, nullable: false),
-                    Response = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    FinishedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    Role = table.Column<int>(type: "integer", nullable: false),
+                    Content = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Requests", x => x.Id);
+                    table.PrimaryKey("PK_Messages", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Requests_Chats_ChatId",
+                        name: "FK_Messages_Chats_ChatId",
                         column: x => x.ChatId,
                         principalTable: "Chats",
                         principalColumn: "Id",
@@ -106,13 +136,28 @@ namespace Neur.Server.Net.Postgres.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Requests_ChatId",
-                table: "Requests",
+                name: "IX_GenerationRequests_CreatedAt",
+                table: "GenerationRequests",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GenerationRequests_ModelId",
+                table: "GenerationRequests",
+                column: "ModelId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GenerationRequests_UserId",
+                table: "GenerationRequests",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Messages_ChatId",
+                table: "Messages",
                 column: "ChatId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Requests_CreatedAt",
-                table: "Requests",
+                name: "IX_Messages_CreatedAt",
+                table: "Messages",
                 column: "CreatedAt");
         }
 
@@ -120,7 +165,10 @@ namespace Neur.Server.Net.Postgres.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Requests");
+                name: "GenerationRequests");
+
+            migrationBuilder.DropTable(
+                name: "Messages");
 
             migrationBuilder.DropTable(
                 name: "Chats");

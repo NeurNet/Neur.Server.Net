@@ -28,14 +28,12 @@ public class ModelsRepository : IModelsRepository {
                 .SetProperty(p => p.Status, status)
                 .SetProperty(p => p.UpdatedAt, DateTime.UtcNow)
             );
-        await _db.SaveChangesAsync();
     }
 
     public async Task Delete(Guid id) {
         await _db.Models
             .Where(model => model.Id == id)
             .ExecuteDeleteAsync();
-        await _db.SaveChangesAsync();
     }
 
     public async Task<ModelEntity?> Get(Guid id) {

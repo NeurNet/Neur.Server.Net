@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Neur.Server.Net.Postgres.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251117142339_init-2")]
-    partial class init2
+    [Migration("20251211144934_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -29,10 +29,6 @@ namespace Neur.Server.Net.Postgres.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("Context")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -55,6 +51,47 @@ namespace Neur.Server.Net.Postgres.Migrations
                     b.ToTable("Chats", (string)null);
                 });
 
+            modelBuilder.Entity("Neur.Server.Net.Core.Entities.GenerationRequestEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ModelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Prompt")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TokenCost")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ModelId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("GenerationRequests", (string)null);
+                });
+
             modelBuilder.Entity("Neur.Server.Net.Core.Entities.MessageEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -75,8 +112,9 @@ namespace Neur.Server.Net.Postgres.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChatId")
-                        .IsUnique();
+                    b.HasIndex("ChatId");
+
+                    b.HasIndex("CreatedAt");
 
                     b.ToTable("Messages");
                 });
@@ -86,12 +124,18 @@ namespace Neur.Server.Net.Postgres.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Context")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ModelName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -114,37 +158,6 @@ namespace Neur.Server.Net.Postgres.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Models");
-                });
-
-            modelBuilder.Entity("Neur.Server.Net.Core.Entities.RequestEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ChatId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("FinishedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Prompt")
-                        .IsRequired()
-                        .HasMaxLength(3000)
-                        .HasColumnType("character varying(3000)");
-
-                    b.Property<DateTime?>("StartedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChatId");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.ToTable("Requests", (string)null);
                 });
 
             modelBuilder.Entity("Neur.Server.Net.Core.Entities.UserEntity", b =>
@@ -196,18 +209,26 @@ namespace Neur.Server.Net.Postgres.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Neur.Server.Net.Core.Entities.MessageEntity", b =>
+            modelBuilder.Entity("Neur.Server.Net.Core.Entities.GenerationRequestEntity", b =>
                 {
-                    b.HasOne("Neur.Server.Net.Core.Entities.ChatEntity", "Chat")
-                        .WithOne()
-                        .HasForeignKey("Neur.Server.Net.Core.Entities.MessageEntity", "ChatId")
+                    b.HasOne("Neur.Server.Net.Core.Entities.ModelEntity", "Model")
+                        .WithMany()
+                        .HasForeignKey("ModelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Chat");
+                    b.HasOne("Neur.Server.Net.Core.Entities.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Model");
+
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Neur.Server.Net.Core.Entities.RequestEntity", b =>
+            modelBuilder.Entity("Neur.Server.Net.Core.Entities.MessageEntity", b =>
                 {
                     b.HasOne("Neur.Server.Net.Core.Entities.ChatEntity", "Chat")
                         .WithMany()

@@ -27,7 +27,10 @@ public static class ApiExtensions {
                     }
                 };
             });
-        services.AddAuthorization();
+        services.AddAuthorization(options => {
+            options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
+            options.AddPolicy("TeacherOrAdmin", policy => policy.RequireRole("admin", "teacher"));
+        });
     }
 
     public static void AddCorsPolicy(this IServiceCollection services, ServiceOptions serviceOptions) {
@@ -46,6 +49,6 @@ public static class ApiExtensions {
         app.MapUserEndPoints();
         app.MapModelsEndPoints();
         app.MapChatsEndPoints();
-        // app.MapRequestEndPoints();
+        app.MapRequestEndPoints();
     }
 }

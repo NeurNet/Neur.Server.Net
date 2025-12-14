@@ -1,18 +1,18 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using Neur.Server.Net.Application.Clients.Options;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services.Contracts;
 using Neur.Server.Net.Application.Services.Contracts.CollegeService;
-using Neur.Server.Net.Application.Services.Options;
 
 namespace Neur.Server.Net.Application.Clients;
 
 public class CollegeClient : ICollegeClient {
     private readonly HttpClient _httpClient;
-    private readonly CollegeServiceOptions _options;
+    private readonly CollegeClientOptions _options;
     
-    public CollegeClient(HttpClient httpClient, IOptions<CollegeServiceOptions> options) {
+    public CollegeClient(HttpClient httpClient, IOptions<CollegeClientOptions> options) {
         _httpClient = httpClient;
         _options = options.Value;
     }

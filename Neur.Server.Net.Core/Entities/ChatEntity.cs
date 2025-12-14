@@ -1,8 +1,8 @@
+using Neur.Server.Net.Core.Abstractions;
+
 namespace Neur.Server.Net.Core.Entities;
 
-public class ChatEntity {
-    private ChatEntity() {}
-    public Guid Id { get; init; }
+public class ChatEntity : Entity {
     public Guid ModelId { get; init; }
     public Guid UserId { get; init; }
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
@@ -11,22 +11,14 @@ public class ChatEntity {
     // Навигационные свойства
     public UserEntity User { get; init; }
     public ModelEntity Model { get; private set; }
-
-    private ChatEntity(Guid id, Guid modelId, Guid userId, DateTime createdAt, DateTime? updatedAt) {
-        Id = id;
+    
+    public ChatEntity(Guid modelId, Guid userId, DateTime createdAt, DateTime? updatedAt = null) {
+        Id = Guid.NewGuid();
         ModelId = modelId;
         UserId = userId;
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
     }
-
-    public static ChatEntity Create( Guid modelId, Guid userId, DateTime createdAt) {
-        return new ChatEntity(
-            Guid.NewGuid(), 
-            modelId,
-            userId,
-            createdAt,
-            null
-        );
-    }
+    
+    private ChatEntity() {}
 }

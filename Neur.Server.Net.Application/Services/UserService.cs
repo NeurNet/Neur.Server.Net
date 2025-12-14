@@ -46,12 +46,11 @@ public class UserService : IUserService {
             var name = collegeUser.username.Split()[0];
             var surname = collegeUser.username.Split()[1];
 
-            var newUser = UserEntity.Create(
-                id: Guid.NewGuid(),
+            var newUser = new UserEntity(
                 username: collegeUser.id,
                 name: name,
                 surname: surname,
-                userRole: DeterminateRole(collegeUser.role),
+                role: DeterminateRole(collegeUser.role),
                 tokens: 10
             );
             await _usersRepository.Add(newUser);

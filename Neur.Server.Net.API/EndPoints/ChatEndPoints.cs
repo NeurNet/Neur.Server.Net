@@ -6,8 +6,11 @@ using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Data;
 using Neur.Server.Net.Application.Exeptions;
+using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
+using Neur.Server.Net.Application.Services.Background;
 using Neur.Server.Net.Application.Services.Contracts.OllamaService;
+using Neur.Server.Net.Application.Services.DTO.ChatService;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Exeptions;
 using Neur.Server.Net.Core.Repositories;
@@ -23,37 +26,33 @@ public static class ChatEndPoints {
 
         endpoints.MapPost(String.Empty, Create)
             .WithSummary("Создать новый чат")
-            .Produces(401)
-            .Produces(404)
+            .Produces(400)
+            .Produces(500)
             .Produces<CreateChatResponse>(200);
 
         endpoints.MapGet(String.Empty, GetAllUserChats)
             .WithSummary("Получить список всех чатов пользователя")
-            .Produces(401)
             .Produces<List<GetChatResponse>>(200);
 
         endpoints.MapGet("/{id}", Get)
-            .WithSummary("Получить чат")
-            .Produces(401)
+            .WithSummary("Получить чат с сообщениями")
             .Produces(404)
-            .Produces<GetFullChatResponse>(200);
+            .Produces<ChatWithMessagesDto>(200);
         
         endpoints.MapPost("/{id}/generate", Generate)
             .WithSummary("Сгенерировать ответ от нейросети")
-            .Produces(401)
             .Produces(404)
             .Produces<string>(200, "text/event-stream");
         
         endpoints.MapDelete("/{id}", Delete)
             .WithSummary("Удалить чат")
-            .Produces(401)
             .Produces(404)
             .Produces(200);
         
         return endpoints;
     }
 
-    private static async Task<IResult> Create(ClaimsPrincipal claimsPrincipal, CreateChatRequest request, ChatService chatService) {
+    private static async Task<IResult> Create(ClaimsPrincipal claimsPrincipal, CreateChatRequest request, IChatService chatService) {
         try {
             var user = claimsPrincipal.ToCurrentUser();
             var chat = await chatService.CreateChatAsync(user.userId, request.modelId);
@@ -68,37 +67,32 @@ public static class ChatEndPoints {
         }
     }
 
-    private static async Task Generate(Guid id, [FromBody] GenerateRequest request, IChatsRepository repository, 
-        ChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context) {
+    private static async Task Generate(Guid id, [FromBody] GenerateRequest request, GenerationQueueService generationQueueService, 
+        IChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context) {
         
         var user = claimsPrincipal.ToCurrentUser();
-        var chat = await repository.Get(id);
-        
-        if (chat == null) {
-            context.Response.StatusCode = 404;
-            await context.Response.WriteAsync("Chat not found");
-            return;
-        }
-        if (request.prompt.Length == 0) {
-            context.Response.StatusCode = 400;
-            await context.Response.WriteAsync("Chat not found");
-            return;
-        }
         
         // Готовим ответ для SSE
-        context.Response.StatusCode = 200;
         context.Response.ContentType = "text/event-stream";
         context.Response.Headers["Cache-Control"] = "no-cache";
         context.Response.Headers["Connection"] = "keep-alive";
 
         try {
-            await foreach (var chunk in chatService.ProcessMessageAsync(user.userId, id, request.prompt)) {
-                // Формат для SSE: каждая строка = одно событие
+
+            await foreach (var chunk in chatService.ProcessPromptAsync(id, user.userId, request.prompt)) {
                 await context.Response.WriteAsync(chunk);
                 await context.Response.Body.FlushAsync();
             }
 
             await context.Response.Body.FlushAsync();
+        }
+        catch (NotFoundException ex) {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            await context.Response.WriteAsync(ex.Message);
+        }
+        catch (QueueException ex) {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsync(ex.Message);
         }
         catch (BillingException ex) {
             context.Response.StatusCode = 402;
@@ -108,20 +102,31 @@ public static class ChatEndPoints {
             context.Response.StatusCode = 500;
             await context.Response.WriteAsync("Timeout error: operation was canceled");
         }
+        catch (Exception ex) {
+            context.Response.StatusCode = 500;
+            await context.Response.WriteAsync(ex.Message);
+        }
     }
 
-    private static async Task<IResult> GetAllUserChats(ClaimsPrincipal claimsPrincipal, IChatsRepository repository) {
+    private static async Task<IResult> GetAllUserChats(ClaimsPrincipal claimsPrincipal, IChatService chatService) {
         var user = claimsPrincipal.ToCurrentUser();
-        
-        var chats = await repository.GetAllUserChats(user.userId);
-        var result = chats.Select(
-            chat => new GetChatResponse(chat.Id, chat.ModelId, chat.Model.Name, chat.Model.ModelName, chat.CreatedAt, chat.UpdatedAt)
-        ).ToList();
-        
-        return Results.Ok(result);
+        try {
+            var chats = await chatService.GetAllUserChats(user.userId);
+            var result = chats.Select(chat => new GetChatResponse(chat.Id, chat.ModelId, chat.Model.Name,
+                chat.Model.ModelName, chat.CreatedAt, chat.UpdatedAt)
+            ).ToList();
+
+            return Results.Ok(result);
+        }
+        catch (NotFoundException ex) {
+            return Results.NotFound(ex.Message);
+        }
+        catch (Exception ex) {
+            return Results.InternalServerError();
+        }
     }
 
-    private static async Task<IResult> Get(ClaimsPrincipal claimsPrincipal, Guid id, IChatsRepository repository, ChatService chatService) {
+    private static async Task<IResult> Get(ClaimsPrincipal claimsPrincipal, Guid id, IChatsRepository repository, IChatService chatService) {
         var user = claimsPrincipal.ToCurrentUser();
         var chat = await repository.Get(id);
         if (chat == null) {
@@ -129,25 +134,16 @@ public static class ChatEndPoints {
         }
 
         var messages = await chatService.GetChatMessagesAsync(chat.Id, user.userId);
-        var responseMessages = messages.Select(message => new MessageResponse(
-            message.Id,
-            message.ChatId,
-            message.CreatedAt,
-            message.Role,
-            message.Content
-        ));
-        
-        return Results.Ok(new GetFullChatResponse(chat.Id, chat.ModelId, chat.Model.Name, chat.Model.ModelName,
-            chat.CreatedAt, chat.UpdatedAt, responseMessages));
+        return Results.Ok(messages);
     }
 
-    private static async Task<IResult> Delete(ClaimsPrincipal claimsPrincipal, Guid id, ChatService chatService) {
+    private static async Task<IResult> Delete(ClaimsPrincipal claimsPrincipal, Guid id, IChatService chatService) {
         try {
             var user = claimsPrincipal.ToCurrentUser();
-            await chatService.DeleteChatAsync(user.userId, id);
+            await chatService.DeleteChatAsync(id, user.userId);
             return Results.Ok(id);
         }
-        catch (NullReferenceException) {
+        catch (NotFoundException) {
             return Results.NotFound("Chat not found");
         }
         catch (Exception) {

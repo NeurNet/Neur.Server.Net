@@ -16,7 +16,7 @@ public class ApplicationDbContext : DbContext {
     public DbSet<UserEntity> Users { get; set; }
     public DbSet<ModelEntity> Models { get; set; }
     public DbSet<ChatEntity> Chats { get; set; }
-    public DbSet<RequestEntity> Requests { get; set; }
+    public DbSet<GenerationRequestEntity> GenerationRequests { get; set; }
     public DbSet<MessageEntity> Messages { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -30,7 +30,7 @@ public class ApplicationDbContext : DbContext {
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new ModelConfiguration());
         modelBuilder.ApplyConfiguration(new ChatConfiguration());
-        modelBuilder.ApplyConfiguration(new RequestConfiguration());
+        modelBuilder.ApplyConfiguration(new GenerationRequestConfiguration());
         modelBuilder.ApplyConfiguration(new MessageConfiguration());
     }
 }
