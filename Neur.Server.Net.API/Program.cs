@@ -42,6 +42,7 @@ builder.Services.AddScoped<IMessagesRepository, MessagesRepository>();
 
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IModelService, ModelService>();
 builder.Services.AddScoped<MessageService>();
 
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();

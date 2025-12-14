@@ -1,11 +1,13 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using Neur.Server.Net.API.Contracts.Models;
+using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.API.Validators;
+using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Records;
-using Neur.Server.Net.Core.Repositories;
-using Neur.Server.Net.Postgres.Repositories;
 
 namespace Neur.Server.Net.API.EndPoints;
 
@@ -29,7 +31,7 @@ public static class ModelEndPoints {
         return endpoints;
     }
 
-    private static async Task<IResult> Add(CreateModelReqest req, IModelsRepository repository) {
+    private static async Task<IResult> Add([FromBody] CreateModelReqest req, [FromServices] IModelService modelService) {
         try {
             var validator = new CreateModelRequestValidator();
             var result = validator.Validate(req);
@@ -44,8 +46,8 @@ public static class ModelEndPoints {
                     status: Enum.Parse<ModelStatus>(req.status),
                     createdAt: DateTime.UtcNow
                 );
-                await repository.Add(model);
-                return Results.Ok(new CreateModelResponse(model.Id.ToString()));   
+                var createdModel = await modelService.CreateAsync(model);
+                return Results.Ok(new CreateModelResponse(createdModel.Id.ToString()));
             }
 
             throw new ValidationException(result.Errors[0].ErrorMessage);
@@ -56,8 +58,9 @@ public static class ModelEndPoints {
         }
     }
 
-    private static async Task<IResult> GetAll(IModelsRepository modelsRepository) {
-        var models = await modelsRepository.GetAll();
+    private static async Task<IResult> GetAll(ClaimsPrincipal claims, [FromServices] IModelService modelService) {
+        var user = claims.ToCurrentUser();
+        var models = await modelService.GetAllByUserRoleAsync(user.userId);
 
         var result = models.Select(model => new GetModelResponse(
             id:  model.Id,
@@ -68,6 +71,6 @@ public static class ModelEndPoints {
             createdAt: model.CreatedAt,
             updatedAt: model.UpdatedAt
         ));
-        return Results.Ok(models);
+        return Results.Ok(result);
     }
 }

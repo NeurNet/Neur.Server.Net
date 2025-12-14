@@ -5,9 +5,9 @@ using Neur.Server.Net.Core.Records;
 namespace Neur.Server.Net.Application.Interfaces;
 
 public interface IModelService {
-    public ModelEntity CreateAsync(ModelEntity model);
-    public ModelEntity GetAsync(Guid id);
-    public IEnumerable<ModelEntity> GetAllByRoleAsync(UserRole role);
-    public void UpdateAsync(ModelEntity model);
-    public void DeleteAsync(Guid id);
+    public Task<ModelEntity> CreateAsync(ModelEntity model);
+    public Task<ModelEntity?> GetAsync(Guid id);
+    public Task<IEnumerable<ModelEntity>> GetAllByUserRoleAsync(Guid userId);
+    public Task UpdateAsync(ModelEntity model);
+    public Task DeleteAsync(Guid id);
 }

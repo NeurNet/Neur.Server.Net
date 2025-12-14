@@ -26,30 +26,26 @@ public static class ChatEndPoints {
 
         endpoints.MapPost(String.Empty, Create)
             .WithSummary("Создать новый чат")
-            .Produces(401)
-            .Produces(404)
+            .Produces(400)
+            .Produces(500)
             .Produces<CreateChatResponse>(200);
 
         endpoints.MapGet(String.Empty, GetAllUserChats)
             .WithSummary("Получить список всех чатов пользователя")
-            .Produces(401)
             .Produces<List<GetChatResponse>>(200);
 
         endpoints.MapGet("/{id}", Get)
-            .WithSummary("Получить чат")
-            .Produces(401)
+            .WithSummary("Получить чат с сообщениями")
             .Produces(404)
             .Produces<ChatWithMessagesDto>(200);
         
         endpoints.MapPost("/{id}/generate", Generate)
             .WithSummary("Сгенерировать ответ от нейросети")
-            .Produces(401)
             .Produces(404)
             .Produces<string>(200, "text/event-stream");
         
         endpoints.MapDelete("/{id}", Delete)
             .WithSummary("Удалить чат")
-            .Produces(401)
             .Produces(404)
             .Produces(200);
         
