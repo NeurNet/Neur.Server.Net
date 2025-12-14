@@ -6,9 +6,11 @@ using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Data;
 using Neur.Server.Net.Application.Exeptions;
+using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Application.Services.Background;
 using Neur.Server.Net.Application.Services.Contracts.OllamaService;
+using Neur.Server.Net.Application.Services.DTO.ChatService;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Exeptions;
 using Neur.Server.Net.Core.Repositories;
@@ -37,7 +39,7 @@ public static class ChatEndPoints {
             .WithSummary("Получить чат")
             .Produces(401)
             .Produces(404)
-            .Produces<GetFullChatResponse>(200);
+            .Produces<ChatWithMessagesDto>(200);
         
         endpoints.MapPost("/{id}/generate", Generate)
             .WithSummary("Сгенерировать ответ от нейросети")
@@ -54,7 +56,7 @@ public static class ChatEndPoints {
         return endpoints;
     }
 
-    private static async Task<IResult> Create(ClaimsPrincipal claimsPrincipal, CreateChatRequest request, ChatService chatService) {
+    private static async Task<IResult> Create(ClaimsPrincipal claimsPrincipal, CreateChatRequest request, IChatService chatService) {
         try {
             var user = claimsPrincipal.ToCurrentUser();
             var chat = await chatService.CreateChatAsync(user.userId, request.modelId);
@@ -69,8 +71,8 @@ public static class ChatEndPoints {
         }
     }
 
-    private static async Task Generate(Guid id, [FromBody] GenerateRequest request, GenerationQueueService generationQueueService, IChatsRepository repository, 
-        ChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context) {
+    private static async Task Generate(Guid id, [FromBody] GenerateRequest request, GenerationQueueService generationQueueService, 
+        IChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context) {
         
         var user = claimsPrincipal.ToCurrentUser();
         
@@ -110,18 +112,25 @@ public static class ChatEndPoints {
         }
     }
 
-    private static async Task<IResult> GetAllUserChats(ClaimsPrincipal claimsPrincipal, IChatsRepository repository) {
+    private static async Task<IResult> GetAllUserChats(ClaimsPrincipal claimsPrincipal, IChatService chatService) {
         var user = claimsPrincipal.ToCurrentUser();
-        
-        var chats = await repository.GetAllUserChats(user.userId);
-        var result = chats.Select(
-            chat => new GetChatResponse(chat.Id, chat.ModelId, chat.Model.Name, chat.Model.ModelName, chat.CreatedAt, chat.UpdatedAt)
-        ).ToList();
-        
-        return Results.Ok(result);
+        try {
+            var chats = await chatService.GetAllUserChats(user.userId);
+            var result = chats.Select(chat => new GetChatResponse(chat.Id, chat.ModelId, chat.Model.Name,
+                chat.Model.ModelName, chat.CreatedAt, chat.UpdatedAt)
+            ).ToList();
+
+            return Results.Ok(result);
+        }
+        catch (NotFoundException ex) {
+            return Results.NotFound(ex.Message);
+        }
+        catch (Exception ex) {
+            return Results.InternalServerError();
+        }
     }
 
-    private static async Task<IResult> Get(ClaimsPrincipal claimsPrincipal, Guid id, IChatsRepository repository, ChatService chatService) {
+    private static async Task<IResult> Get(ClaimsPrincipal claimsPrincipal, Guid id, IChatsRepository repository, IChatService chatService) {
         var user = claimsPrincipal.ToCurrentUser();
         var chat = await repository.Get(id);
         if (chat == null) {
@@ -129,25 +138,16 @@ public static class ChatEndPoints {
         }
 
         var messages = await chatService.GetChatMessagesAsync(chat.Id, user.userId);
-        var responseMessages = messages.Select(message => new MessageResponse(
-            message.Id,
-            message.ChatId,
-            message.CreatedAt,
-            message.Role,
-            message.Content
-        ));
-        
-        return Results.Ok(new GetFullChatResponse(chat.Id, chat.ModelId, chat.Model.Name, chat.Model.ModelName,
-            chat.CreatedAt, chat.UpdatedAt, responseMessages));
+        return Results.Ok(messages);
     }
 
-    private static async Task<IResult> Delete(ClaimsPrincipal claimsPrincipal, Guid id, ChatService chatService) {
+    private static async Task<IResult> Delete(ClaimsPrincipal claimsPrincipal, Guid id, IChatService chatService) {
         try {
             var user = claimsPrincipal.ToCurrentUser();
             await chatService.DeleteChatAsync(id, user.userId);
             return Results.Ok(id);
         }
-        catch (NullReferenceException) {
+        catch (NotFoundException) {
             return Results.NotFound("Chat not found");
         }
         catch (Exception) {

@@ -41,7 +41,7 @@ builder.Services.AddScoped<IGenerationRequestsRepository, GenerationRequestsRepo
 builder.Services.AddScoped<IMessagesRepository, MessagesRepository>();
 
 builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<ChatService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<MessageService>();
 
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
