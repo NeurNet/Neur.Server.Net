@@ -50,5 +50,6 @@ public static class ApiExtensions {
         app.MapModelsEndPoints();
         app.MapChatsEndPoints();
         app.MapRequestEndPoints();
+        app.MapManagementEndPoints();
     }
 }

@@ -18,8 +18,7 @@ public class UserService : IUserService {
         _collegeClient = collegeClient;
         _jwtProvider = jwtProvider;
     }
-
-    //Тут временный говнокод
+    
     private UserRole DeterminateRole(string role) {
         switch (role) {
             case "student":
