@@ -5,7 +5,7 @@ using Neur.Server.Net.Postgres;
 
 namespace Neur.Server.Net.Application.Services;
 
-public class MessageService {
+public class MessageService : IMessageService {
     private IMessagesRepository  _messagesRepository;
     
     public MessageService(IMessagesRepository messagesRepository) {

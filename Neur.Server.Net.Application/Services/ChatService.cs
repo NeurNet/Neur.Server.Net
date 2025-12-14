@@ -17,11 +17,11 @@ namespace Neur.Server.Net.Application.Services;
 public class ChatService : IChatService {
     private readonly ApplicationDbContext _dbContext;
     private readonly GenerationService _generationService;
-    private readonly MessageService _messageService;
+    private readonly IMessageService _messageService;
     private readonly IMessagesRepository _messagesRepository;
     private readonly IChatsRepository _chatsRepository;
     public ChatService(ApplicationDbContext dbContext, GenerationService generationService,
-        IChatsRepository chatsRepository, IMessagesRepository messagesRepository, MessageService messageService) {
+        IChatsRepository chatsRepository, IMessagesRepository messagesRepository, IMessageService messageService) {
         _dbContext = dbContext;
         _generationService = generationService;
         _chatsRepository = chatsRepository;

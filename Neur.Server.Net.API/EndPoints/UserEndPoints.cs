@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.API.Contracts.Users;
 using Neur.Server.Net.API.Extensions;
+using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure;
@@ -32,7 +33,7 @@ public static class UserEndPoints {
         return endpoints;
     }
     
-    private static async Task<IResult> Login(UserLoginRequest req, UserService userService, HttpResponse response, IOptions<JwtOptions> _jwtOptions) {
+    private static async Task<IResult> Login(UserLoginRequest req, IUserService userService, HttpResponse response, IOptions<JwtOptions> _jwtOptions) {
         try {
             var jwtOptions = _jwtOptions.Value;
             var token = await userService.Login(req.username, req.password);
