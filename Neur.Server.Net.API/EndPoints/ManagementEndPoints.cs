@@ -13,7 +13,12 @@ public static class ManagementEndPoints {
             .WithTags("Management")
             .RequireAuthorization("TeacherOrAdmin");
 
-        endpoints.MapPost("/user/tokens", GiveTokens);
+        endpoints.MapPost("/user/tokens", GiveTokens)
+            .WithSummary("Передать токены пользователю")
+            .Produces(200)
+            .Produces(400)
+            .Produces(401)
+            .Produces(404);
         
         return endpoints;
     }

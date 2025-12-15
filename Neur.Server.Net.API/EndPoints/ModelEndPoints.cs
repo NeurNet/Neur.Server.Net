@@ -13,20 +13,21 @@ namespace Neur.Server.Net.API.EndPoints;
 
 public static class ModelEndPoints {
     public static IEndpointRouteBuilder MapModelsEndPoints(this IEndpointRouteBuilder app) {
-        var endpoints = app.MapGroup("/api/models").WithTags("Models");
+        var endpoints = app
+            .MapGroup("/api/models")
+            .WithTags("Models")
+            .RequireAuthorization("admin");
 
         endpoints.MapGet(String.Empty, GetAll)
             .WithSummary("Получить список всех моделей")
             .Produces<List<GetModelResponse>>(200)
-            .Produces(401)
-            .RequireAuthorization();
-        
+            .Produces(401);
+
         endpoints.MapPost(String.Empty, Add)
             .WithSummary("Создать модель")
             .Produces<CreateModelResponse>(200)
             .Produces(400)
-            .Produces(401)
-            .RequireAuthorization();
+            .Produces(401);
         
         return endpoints;
     }
