@@ -133,8 +133,8 @@ public static class ChatEndPoints {
             return Results.NotFound("Chat not found");
         }
 
-        var messages = await chatService.GetChatMessagesAsync(chat.Id, user.userId);
-        return Results.Ok(messages);
+        var chatWithMessages = await chatService.GetChatMessagesAsync(chat.Id, user.userId);
+        return Results.Ok(chatWithMessages);
     }
 
     private static async Task<IResult> Delete(ClaimsPrincipal claimsPrincipal, Guid id, IChatService chatService) {

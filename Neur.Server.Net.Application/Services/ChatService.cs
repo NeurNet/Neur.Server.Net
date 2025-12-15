@@ -62,14 +62,14 @@ public class ChatService : IChatService {
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<ChatWithMessagesDto>> GetChatMessagesAsync(Guid chatId, Guid userId) {
+    public async Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, Guid userId) {
         var chat = await _dbContext.Chats
             .AsNoTracking()
             .Where(x => x.Id == chatId && x.UserId == userId)
             .Include(x => x.Model)
-            .ToListAsync();
+            .FirstOrDefaultAsync();
         
-        if (chat == null || chat.Count == 0) {
+        if (chat == null) {
             throw new NotFoundException("Chat not found");
         }
         
