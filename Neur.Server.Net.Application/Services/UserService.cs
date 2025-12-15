@@ -57,4 +57,9 @@ public class UserService : IUserService {
             return token;
         }
     }
+
+    public async Task<List<UserEntity>> GetAllUsers() {
+        var users = await _usersRepository.GetAll();
+        return users;
+    }
 }

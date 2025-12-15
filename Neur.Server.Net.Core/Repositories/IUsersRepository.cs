@@ -7,5 +7,6 @@ public interface IUsersRepository {
     Task Add(UserEntity user);
     Task<UserEntity> GetByLdapId(string id);
     Task<UserEntity> GetById(Guid id);
+    Task<List<UserEntity>> GetAll();
     Task Update(UserEntity user);
 }

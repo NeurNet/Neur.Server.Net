@@ -6,6 +6,7 @@ using Neur.Server.Net.API.Contracts.Users;
 using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
+using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure;
 
@@ -29,6 +30,11 @@ public static class UserEndPoints {
         endpoints.MapPost("/auth/logout", Logout)
             .WithSummary("Выход из сервиса")
             .WithDescription("Удаляет Cookie <b>'auth_token'</b>");
+        endpoints.MapGet(string.Empty, GetAll)
+            .WithSummary("Получить список всех пользователей")
+            .Produces<List<UserResponse>>()
+            .Produces(401)
+            .RequireAuthorization("TeacherOrAdmin");
         
         return endpoints;
     }
@@ -65,5 +71,17 @@ public static class UserEndPoints {
         var userRole = user.Role.ToString().ToLower();
         
         return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, userRole, user.Tokens));
+    }
+
+    private static async Task<IEnumerable<UserResponse>> GetAll(IUserService userService) {
+        var users = await userService.GetAllUsers();
+        return users.Select(x => new UserResponse(
+            x.Id,
+            x.Username,
+            x.Name,
+            x.Surname,
+            x.Role,
+            x.Tokens
+        ));
     }
 }

@@ -38,6 +38,13 @@ public class UsersRepository : IUsersRepository {
         return user;
     }
 
+    public async Task<List<UserEntity>> GetAll() {
+        var  users = await _db.Users
+            .AsNoTracking()
+            .ToListAsync();
+        return users;
+    }
+
     public async Task Update(UserEntity user) {
         await _db.Users
             .Where(u => u.Id == user.Id)
