@@ -15,8 +15,7 @@ public static class ModelEndPoints {
     public static IEndpointRouteBuilder MapModelsEndPoints(this IEndpointRouteBuilder app) {
         var endpoints = app
             .MapGroup("/api/models")
-            .WithTags("Models")
-            .RequireAuthorization("admin");
+            .WithTags("Models");
 
         endpoints.MapGet(String.Empty, GetAll)
             .WithSummary("Получить список всех моделей")
@@ -27,7 +26,8 @@ public static class ModelEndPoints {
             .WithSummary("Создать модель")
             .Produces<CreateModelResponse>(200)
             .Produces(400)
-            .Produces(401);
+            .Produces(401)
+            .RequireAuthorization("admin");;
         
         return endpoints;
     }
