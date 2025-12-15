@@ -28,13 +28,13 @@ public class UsersRepository : IUsersRepository {
         return user;
     }
 
-    public async Task<UserEntity> GetById(Guid id) {
-        var user = await _db.Users
-            .AsNoTracking()
+    public async Task<UserEntity?> GetById(Guid id, bool tracking = false) {
+        var query = tracking ? _db.Users 
+            : _db.Users.AsNoTracking();
+        
+        var user = await query
             .FirstOrDefaultAsync(u => u.Id == id);
-        if (user == null) {
-            throw new NullReferenceException("User not found");
-        }
+        
         return user;
     }
 
