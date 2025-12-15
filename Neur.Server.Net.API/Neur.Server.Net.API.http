@@ -1,0 +1,6 @@
+@Neur.Server.Net.API_HostAddress = http://localhost:5192
+
+GET {{Neur.Server.Net.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
