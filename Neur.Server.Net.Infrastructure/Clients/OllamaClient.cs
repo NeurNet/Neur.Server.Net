@@ -7,10 +7,18 @@ using Neur.Server.Net.Infrastructure.Interfaces;
 
 namespace Neur.Server.Net.Infrastructure.Clients;
 
+/// <summary>
+/// The client object to send requests to Ollama
+/// </summary>
 public class OllamaClient : IOllamaClient {
     private readonly HttpClient _httpClient;
     private readonly OllamaClientOptions _options;
 
+    /// <summary>
+    /// Initializes a new <see cref="OllamaClient"/> class
+    /// </summary>
+    /// <param name="httpClient">The HTTP client for API requests</param>
+    /// <param name="options">Configuration options for the client</param>
     public OllamaClient(HttpClient httpClient, IOptions<OllamaClientOptions> options) {
         _httpClient = httpClient;
         _options = options.Value;
@@ -27,7 +35,13 @@ public class OllamaClient : IOllamaClient {
             yield return content.response;
         }
     }
-
+    
+    /// <summary>
+    /// The method of sending a generation request to Ollama
+    /// </summary>
+    /// <param name="request">Request object</param>
+    /// <param name="cts">Cancellation token</param>
+    /// <returns></returns>
     public async Task<Stream> GenerateStreamAsync(OllamaRequest request, CancellationToken cts) {
         var requestBody = JsonSerializer.Serialize(request);
         var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
