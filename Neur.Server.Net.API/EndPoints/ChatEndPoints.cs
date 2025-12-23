@@ -9,7 +9,6 @@ using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Application.Services.Background;
-using Neur.Server.Net.Application.Services.Contracts.OllamaService;
 using Neur.Server.Net.Application.Services.DTO.ChatService;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Exeptions;
@@ -71,15 +70,15 @@ public static class ChatEndPoints {
         IChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context) {
         
         var user = claimsPrincipal.ToCurrentUser();
+        var ctsToken = new CancellationTokenSource();
+        ctsToken.CancelAfter(TimeSpan.FromSeconds(30));
         
-        // Готовим ответ для SSE
         context.Response.ContentType = "text/event-stream";
         context.Response.Headers["Cache-Control"] = "no-cache";
         context.Response.Headers["Connection"] = "keep-alive";
 
         try {
-
-            await foreach (var chunk in chatService.ProcessPromptAsync(id, user.userId, request.prompt)) {
+            await foreach (var chunk in chatService.ProcessPromptAsync(id, user.userId, request.prompt, ctsToken.Token)) {
                 await context.Response.WriteAsync(chunk);
                 await context.Response.Body.FlushAsync();
             }

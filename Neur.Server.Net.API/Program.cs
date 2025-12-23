@@ -12,14 +12,18 @@ using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Application.Services.Background;
 using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure;
+using Neur.Server.Net.Infrastructure.Clients;
 using Neur.Server.Net.Infrastructure.Interfaces;
 using Neur.Server.Net.Postgres;
+using Neur.Server.Net.Postgres.Extensions;
 using Neur.Server.Net.Postgres.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 builder.Services.AddCorsPolicy(builder.Configuration.GetSection("Services").Get<ServiceOptions>());
-builder.Services.AddDbContext<ApplicationDbContext>();
+builder.Services.AddDatabaseConfiguration();
+
 builder.Services.AddSingleton<GenerationService>();
 builder.Services.AddSingleton<GenerationQueueService>();
 builder.Services.AddHostedService<GenerationService>();
@@ -31,14 +35,8 @@ builder.Services.Configure<CollegeClientOptions>(builder.Configuration.GetSectio
     nameof(CollegeClient)));
 builder.Services.Configure<OllamaClientOptions>(builder.Configuration.GetSection("Services").GetSection(nameof(OllamaClient)));
 
-builder.Services.AddSingleton<OllamaClient>();
+builder.Services.AddSingleton<IOllamaClient, OllamaClient>();
 builder.Services.AddSingleton<ICollegeClient, CollegeClient>();
-
-builder.Services.AddScoped<IUsersRepository, UsersRepository>();
-builder.Services.AddScoped<IModelsRepository, ModelsRepository>();
-builder.Services.AddScoped<IChatsRepository, ChatsRepository>();
-builder.Services.AddScoped<IGenerationRequestsRepository, GenerationRequestsRepository>();
-builder.Services.AddScoped<IMessagesRepository, MessagesRepository>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IChatService, ChatService>();
@@ -50,7 +48,6 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 
 builder.Services.AddApiAuthentication(builder.Configuration.GetSection(nameof(JwtOptions)).Get<JwtOptions>());
-
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {

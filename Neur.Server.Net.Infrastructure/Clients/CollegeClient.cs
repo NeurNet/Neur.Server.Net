@@ -2,11 +2,10 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.Application.Clients.Options;
-using Neur.Server.Net.Application.Interfaces;
-using Neur.Server.Net.Application.Services.Contracts;
-using Neur.Server.Net.Application.Services.Contracts.CollegeService;
+using Neur.Server.Net.Infrastructure.Clients.Contracts.CollegeClient;
+using Neur.Server.Net.Infrastructure.Interfaces;
 
-namespace Neur.Server.Net.Application.Clients;
+namespace Neur.Server.Net.Infrastructure.Clients;
 
 public class CollegeClient : ICollegeClient {
     private readonly HttpClient _httpClient;

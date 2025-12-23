@@ -8,5 +8,5 @@ public interface IChatService {
     Task DeleteChatAsync(Guid chatId, Guid userId);
     Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, Guid userId);
     Task<List<ChatEntity>> GetAllUserChats(Guid userId);
-    IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt);
+    IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt, CancellationToken token);
 }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Extensions;
 using Neur.Server.Net.Application.Interfaces;
@@ -10,6 +11,7 @@ using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure;
+using Neur.Server.Net.Infrastructure.Clients;
 using Neur.Server.Net.Postgres;
 
 namespace Neur.Server.Net.Application.Services;
@@ -86,7 +88,7 @@ public class ChatService : IChatService {
         return await _chatsRepository.GetAllUserChats(userId);
     }
     
-    public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt) {
+    public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt, CancellationToken token) {
         var user = await _dbContext.Users
             .AsNoTracking()
             .Where(x => x.Id == userId)
@@ -104,20 +106,12 @@ public class ChatService : IChatService {
             throw new BillingException("Not enough tokens");
         }
         
-        var cts = new CancellationTokenSource();
-        cts.CancelAfter(TimeSpan.FromSeconds(30));
-        
         await _messageService.SaveMessageAsync(chat, MessageRole.User, prompt);
         var context = await ReadContext(chatId, prompt, chat.Model.Context);
-        var stream = await _generationService.StreamGeneration(chat.ModelId, userId, context, cts.Token);
-        
-        using var reader = new StreamReader(stream);
-        string? line;
-        while ((line = await reader.ReadLineAsync()) != null) {
-            using var jsonDoc = JsonDocument.Parse(line);
-            var content = jsonDoc.RootElement.GetProperty("response").GetString();
-            
-            yield return content;
+        var stream = await _generationService.StreamGeneration(chat.ModelId, userId, context, token);
+
+        await foreach (var chunk in OllamaClient.DeserializeStream(stream, token)) {
+            yield return chunk;
         }
     }
 }

@@ -1,20 +1,31 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using Neur.Server.Net.Application.Clients.Contracts.OllamaClient;
 using Neur.Server.Net.Application.Clients.Options;
-using Neur.Server.Net.Application.Services.Contracts.OllamaService;
-using Neur.Server.Net.Core.Repositories;
+using Neur.Server.Net.Infrastructure.Clients.Contracts.OllamaClient;
+using Neur.Server.Net.Infrastructure.Interfaces;
 
-namespace Neur.Server.Net.Application.Clients;
+namespace Neur.Server.Net.Infrastructure.Clients;
 
-public class OllamaClient {
+public class OllamaClient : IOllamaClient {
     private readonly HttpClient _httpClient;
     private readonly OllamaClientOptions _options;
 
     public OllamaClient(HttpClient httpClient, IOptions<OllamaClientOptions> options) {
         _httpClient = httpClient;
         _options = options.Value;
+    }
+
+    public static async IAsyncEnumerable<string> DeserializeStream(Stream stream, CancellationToken token) {
+        using var reader = new StreamReader(stream);
+        while (!reader.EndOfStream && !token.IsCancellationRequested) {
+            var line = await reader.ReadLineAsync();
+            if (line == null) continue;
+            var content = JsonSerializer.Deserialize<OllamaResponse>(line);
+            if (content == null) continue;
+            
+            yield return content.response;
+        }
     }
 
     public async Task<Stream> GenerateStreamAsync(OllamaRequest request, CancellationToken cts) {

@@ -2,10 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Neur.Server.Net.Application.Clients;
-using Neur.Server.Net.Application.Clients.Contracts.OllamaClient;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
+using Neur.Server.Net.Infrastructure.Clients;
+using Neur.Server.Net.Infrastructure.Clients.Contracts.OllamaClient;
+using Neur.Server.Net.Infrastructure.Interfaces;
 using Neur.Server.Net.Postgres;
 
 namespace Neur.Server.Net.Application.Services.Background;
@@ -13,9 +15,9 @@ namespace Neur.Server.Net.Application.Services.Background;
 public class GenerationService : BackgroundService {
     private readonly GenerationQueueService _generationQueue;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly OllamaClient _ollamaClient;
+    private readonly IOllamaClient _ollamaClient;
     
-    public GenerationService(IServiceScopeFactory scopeFactory, GenerationQueueService generationQueue, OllamaClient ollamaClient) {
+    public GenerationService(IServiceScopeFactory scopeFactory, GenerationQueueService generationQueue, IOllamaClient ollamaClient) {
         _generationQueue = generationQueue;
         _scopeFactory = scopeFactory;
         _ollamaClient = ollamaClient;
