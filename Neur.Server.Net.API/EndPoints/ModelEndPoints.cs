@@ -27,7 +27,7 @@ public static class ModelEndPoints {
             .Produces<CreateModelResponse>(200)
             .Produces(400)
             .Produces(401)
-            .RequireAuthorization("admin");;
+            .RequireAuthorization("AdminOnly");;
         
         return endpoints;
     }
