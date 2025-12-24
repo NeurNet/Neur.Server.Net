@@ -30,8 +30,8 @@ public class ChatService : IChatService {
         _messagesRepository = messagesRepository;
         _messageService = messageService;
     }
-    private async Task<string> ReadContext(Guid chatId, string currentMessage, string baseContext) {
-        List<MessageEntity> messages = await _messagesRepository.GetChatMessages(chatId);
+    private async Task<string> ReadContextAsync(Guid chatId, string currentMessage, string baseContext, CancellationToken token = default) {
+        List<MessageEntity> messages = await _messagesRepository.GetChatMessagesAsync(chatId, token);
         var contextManager = new ContextManager();
         
         contextManager.AddBaseContext(baseContext);
@@ -39,65 +39,65 @@ public class ChatService : IChatService {
         contextManager.AddCurrentPrompt(currentMessage);
         return contextManager.GetContext();
     }
-    public async Task<ChatEntity> CreateChatAsync(Guid userId, Guid modelId) {
+    public async Task<ChatEntity> CreateChatAsync(Guid userId, Guid modelId, CancellationToken token = default) {
         var chat = new ChatEntity(
             userId: userId,
             modelId: modelId,
             createdAt:  DateTime.UtcNow
         );
-        await _chatsRepository.Add(chat);
+        await _chatsRepository.AddAsync(chat, token);
         
-        var savedChat = await _chatsRepository.Get(chat.Id);
+        var savedChat = await _chatsRepository.GetAsync(chat.Id, token);
         if (savedChat != null) {
             return savedChat;   
         }
         throw new Exception("Error getting the chat after create");
     }
 
-    public async Task DeleteChatAsync(Guid chatId, Guid userId) {
+    public async Task DeleteChatAsync(Guid chatId, Guid userId, CancellationToken token = default) {
         var chat = await _dbContext.Chats.Where(x => x.Id == chatId && x.UserId == userId).FirstOrDefaultAsync();
         if (chat == null) {
             throw new NotFoundException("Chat not found");
         }
         
         _dbContext.Chats.Remove(chat);
-        await _dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync(token);
     }
 
-    public async Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, Guid userId) {
+    public async Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, Guid userId, CancellationToken token = default) {
         var chat = await _dbContext.Chats
             .AsNoTracking()
             .Where(x => x.Id == chatId && x.UserId == userId)
             .Include(x => x.Model)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(token);
         
         if (chat == null) {
             throw new NotFoundException("Chat not found");
         }
         
-        var messages = await _messagesRepository.GetChatMessages(chatId);
+        var messages = await _messagesRepository.GetChatMessagesAsync(chatId, token);
         return chat.ToResponse(messages);
     }
 
-    public async Task<List<ChatEntity>> GetAllUserChats(Guid userId) {
-        var user  = await _dbContext.Users.AsNoTracking().Where(x => x.Id == userId).FirstOrDefaultAsync();
+    public async Task<List<ChatEntity>> GetAllUserChatsAsync(Guid userId, CancellationToken token = default) {
+        var user  = await _dbContext.Users.AsNoTracking().Where(x => x.Id == userId).FirstOrDefaultAsync(token);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
 
-        return await _chatsRepository.GetAllUserChats(userId);
+        return await _chatsRepository.GetAllUserChatsAsync(userId, token);
     }
     
-    public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt, CancellationToken token) {
+        public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt, CancellationToken token) {
         var user = await _dbContext.Users
             .AsNoTracking()
             .Where(x => x.Id == userId)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(token);
         var chat = await _dbContext.Chats
             .AsNoTracking()
             .Where(x => x.Id == chatId && x.UserId == userId)
             .Include(x => x.Model)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(token);
         
         if (user == null || chat == null) {
             throw new NotFoundException();
@@ -107,11 +107,12 @@ public class ChatService : IChatService {
         }
         
         await _messageService.SaveMessageAsync(chat, MessageRole.User, prompt);
-        var context = await ReadContext(chatId, prompt, chat.Model.Context);
-        var stream = await _generationService.StreamGeneration(chat.ModelId, userId, context, token);
-
-        await foreach (var chunk in OllamaClient.DeserializeStream(stream, token)) {
+        var context = await ReadContextAsync(chatId, prompt, chat.Model.Context, token);
+        var modelResponse = string.Empty;
+        await foreach (var chunk in _generationService.StreamGeneration(chat.ModelId, userId, context, token)) {
+            modelResponse += chunk;
             yield return chunk;
         }
+        await _messageService.SaveMessageAsync(chat, MessageRole.Assistant, modelResponse);
     }
 }
