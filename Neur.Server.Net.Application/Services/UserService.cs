@@ -45,7 +45,7 @@ public class UserService : IUserService {
         }
 
         try {
-            var user = await _usersRepository.GetByLdapId(username);
+            var user = await _usersRepository.GetByLdapIdAsync(username);
             var token = _jwtProvider.GenerateToken(user);
             return token;
         }
@@ -60,19 +60,19 @@ public class UserService : IUserService {
                 role: DeterminateRole(collegeUser.role),
                 tokens: 10
             );
-            await _usersRepository.Add(newUser);
+            await _usersRepository.AddAsync(newUser);
             var token = _jwtProvider.GenerateToken(newUser);
             return token;
         }
     }
 
     public async Task<List<UserEntity>> GetAllUsers() {
-        var users = await _usersRepository.GetAll();
+        var users = await _usersRepository.GetAllAsync();
         return users;
     }
 
     public async Task ChangeUserRole(Guid userId, UserRole role) {
-        var user = await _usersRepository.GetById(userId, true);
+        var user = await _usersRepository.GetByIdAsync(userId, true);
         if (user == null) {
             throw new NotFoundException("User not found");
         }

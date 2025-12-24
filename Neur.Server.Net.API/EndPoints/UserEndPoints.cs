@@ -66,7 +66,7 @@ public static class UserEndPoints {
     
     private static async Task<IResult> Auth(ClaimsPrincipal claimsPrincipal, IUsersRepository userRepository) {
         var cookie = claimsPrincipal.ToCurrentUser();
-        var user = await userRepository.GetById(cookie.userId);
+        var user = await userRepository.GetByIdAsync(cookie.userId);
 
         var userRole = user.Role.ToString().ToLower();
         

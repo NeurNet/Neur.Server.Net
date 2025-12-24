@@ -4,5 +4,5 @@ using Neur.Server.Net.Core.Entities;
 namespace Neur.Server.Net.Application.Interfaces;
 
 public interface IMessageService {
-    Task<Guid> SaveMessageAsync(ChatEntity chat, MessageRole role, string content);
+    Task<Guid> SaveMessageAsync(ChatEntity chat, MessageRole role, string content, CancellationToken token = default);
 }

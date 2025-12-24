@@ -19,7 +19,7 @@ public class GenerationRequestService {
     }
     
     public async Task<IEnumerable<GenerationRequestEntity>> GetAllGenerationRequests(Guid userId) {
-        var user = await _usersRepository.GetById(userId);
+        var user = await _usersRepository.GetByIdAsync(userId);
         if (user == null) {
             throw new NotFoundException("User not found");
         }

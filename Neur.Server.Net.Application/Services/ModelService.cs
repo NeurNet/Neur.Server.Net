@@ -20,9 +20,9 @@ public class ModelService : IModelService {
         _usersRepository = usersRepository;
     }
     
-    public async Task<ModelEntity> CreateAsync(ModelEntity model) {
-        await _modelsRepository.Add(model);
-        var savedModel = await _modelsRepository.Get(model.Id);
+    public async Task<ModelEntity> CreateAsync(ModelEntity model, CancellationToken token = default) {
+        await _modelsRepository.AddAsync(model,  token);
+        var savedModel = await _modelsRepository.GetAsync(model.Id,  token);
 
         if (savedModel != null) {
             return savedModel;
@@ -31,12 +31,12 @@ public class ModelService : IModelService {
         throw new Exception("Error getting the model after create");
     }
 
-    public async Task<ModelEntity?> GetAsync(Guid id) {
-        return await _modelsRepository.Get(id);
+    public async Task<ModelEntity?> GetAsync(Guid id,  CancellationToken token = default) {
+        return await _modelsRepository.GetAsync(id, token);
     }
 
-    public async Task<IEnumerable<ModelEntity>> GetAllByUserRoleAsync(Guid userId) {
-        var user = await _usersRepository.GetById(userId);
+    public async Task<IEnumerable<ModelEntity>> GetAllByUserRoleAsync(Guid userId, CancellationToken token = default) {
+        var user = await _usersRepository.GetByIdAsync(userId, false, token);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -44,13 +44,13 @@ public class ModelService : IModelService {
         var models = await _context.Models
             .AsNoTracking()
             .Where(x => user.Role == UserRole.Admin || x.Status == ModelStatus.open)
-            .ToListAsync();
+            .ToListAsync(token);
         
         return models;
     }
 
-    public async Task UpdateAsync(ModelEntity model) {
-        var existingModel = await _modelsRepository.Get(model.Id);
+    public async Task UpdateAsync(ModelEntity model, CancellationToken token = default) {
+        var existingModel = await _modelsRepository.GetAsync(model.Id);
 
         if (existingModel == null) {
             throw new Exception("Model not found");
@@ -64,10 +64,10 @@ public class ModelService : IModelService {
         existingModel.Status = model.Status;
         existingModel.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(token);
     }
 
-    public async Task DeleteAsync(Guid id) {
-        await _modelsRepository.Delete(id);
+    public async Task DeleteAsync(Guid id, CancellationToken token = default) {
+        await _modelsRepository.DeleteAsync(id, token);
     }
 }

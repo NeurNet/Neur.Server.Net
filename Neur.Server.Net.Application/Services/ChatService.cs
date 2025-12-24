@@ -32,7 +32,7 @@ public class ChatService : IChatService {
     }
     private async Task<string> ReadContextAsync(Guid chatId, string currentMessage, string baseContext, CancellationToken token = default) {
         List<MessageEntity> messages = await _messagesRepository.GetChatMessagesAsync(chatId, token);
-        var contextManager = new ContextManager();
+        var contextManager = new ContextManager(1000);
         
         contextManager.AddBaseContext(baseContext);
         contextManager.AddChatHistory(messages);
@@ -55,7 +55,7 @@ public class ChatService : IChatService {
     }
 
     public async Task DeleteChatAsync(Guid chatId, Guid userId, CancellationToken token = default) {
-        var chat = await _dbContext.Chats.Where(x => x.Id == chatId && x.UserId == userId).FirstOrDefaultAsync();
+        var chat = await _dbContext.Chats.Where(x => x.Id == chatId && x.UserId == userId).FirstOrDefaultAsync(token);
         if (chat == null) {
             throw new NotFoundException("Chat not found");
         }
@@ -106,13 +106,13 @@ public class ChatService : IChatService {
             throw new BillingException("Not enough tokens");
         }
         
-        await _messageService.SaveMessageAsync(chat, MessageRole.User, prompt);
+        await _messageService.SaveMessageAsync(chat, MessageRole.User, prompt, token);
         var context = await ReadContextAsync(chatId, prompt, chat.Model.Context, token);
         var modelResponse = string.Empty;
         await foreach (var chunk in _generationService.StreamGeneration(chat.ModelId, userId, context, token)) {
             modelResponse += chunk;
             yield return chunk;
         }
-        await _messageService.SaveMessageAsync(chat, MessageRole.Assistant, modelResponse);
+        await _messageService.SaveMessageAsync(chat, MessageRole.Assistant, modelResponse, token);
     }
 }
