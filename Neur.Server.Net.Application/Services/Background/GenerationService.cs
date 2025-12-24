@@ -34,7 +34,7 @@ public class GenerationService : BackgroundService {
         return request != null;
     }
 
-    public async Task<Stream> StreamGeneration(Guid modelId, Guid userId, string context, CancellationToken cancellationToken) {
+    public async IAsyncEnumerable<string> StreamGeneration(Guid modelId, Guid userId, string context, CancellationToken ctsToken) {
         if (await HasPendingRequestsAsync(userId)) {
             throw new QueueException("User is already has pending requests");
         }
@@ -44,23 +44,25 @@ public class GenerationService : BackgroundService {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         
-        await dbContext.GenerationRequests.AddAsync(generationRequest);
-        await dbContext.SaveChangesAsync();
+        await dbContext.GenerationRequests.AddAsync(generationRequest, ctsToken);
+        await dbContext.SaveChangesAsync(ctsToken);
         
         await _generationQueue.EnqueueAsync(generationRequest.Id);
-        var stream = await _generationQueue.WaitForResultAsync(generationRequest.Id, cancellationToken);
+        var stream = await _generationQueue.WaitForResultAsync(generationRequest.Id, ctsToken);
         
-        return stream;
+        await foreach (var chunk in OllamaClient.DeserializeStream(stream, ctsToken)) {
+            yield return chunk;
+        }
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+    protected override async Task ExecuteAsync(CancellationToken ctsToken) {
         Console.WriteLine("Сервис генерации запущен!");
-        while (!stoppingToken.IsCancellationRequested) {
+        while (!ctsToken.IsCancellationRequested) {
             var reader = _generationQueue.GetEnqueueReader();
-            await foreach (var requestId in reader.ReadAllAsync(stoppingToken)) {
+            await foreach (var requestId in reader.ReadAllAsync(ctsToken)) {
                 try {
                     Console.WriteLine($"НОВЫЙ ЗАПРОС: {requestId}");
-                    await ProcessRequest(requestId, stoppingToken);
+                    await ProcessRequest(requestId, ctsToken);
                     Console.WriteLine("Обработано");
                 }
                 catch (Exception ex) {
@@ -68,11 +70,11 @@ public class GenerationService : BackgroundService {
                     _generationQueue.FailRequest(requestId, ex);
                 }
             }
-            await Task.Delay(100, stoppingToken);
+            await Task.Delay(100, ctsToken);
         }
     }
 
-    private async Task ProcessRequest(Guid requestId, CancellationToken stoppingToken) {
+    private async Task ProcessRequest(Guid requestId, CancellationToken ctsToken) {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         
@@ -80,30 +82,40 @@ public class GenerationService : BackgroundService {
             .Where(x => x.Id == requestId)
             .Include(x => x.Model)
             .Include(x => x.User)
-            .FirstAsync(cancellationToken: stoppingToken);
+            .FirstAsync(cancellationToken: ctsToken);
 
         if (requestEntity == null) {
             throw new NotFoundException("Request not found");
         }
-
+        
         requestEntity.StartedAt = DateTime.UtcNow;
         requestEntity.Status = RequestStatus.InProgress;
-        await dbContext.SaveChangesAsync(stoppingToken);
+        await dbContext.SaveChangesAsync(ctsToken);
 
         try {
             var ollamaRequest = new OllamaRequest(requestEntity.Model.ModelName, requestEntity.Prompt);
-            var stream = await _ollamaClient.GenerateStreamAsync(ollamaRequest, stoppingToken);
-            requestEntity.User.Tokens--;
-            requestEntity.Status = RequestStatus.Success;
-            requestEntity.FinishedAt = DateTime.UtcNow;
-            await dbContext.SaveChangesAsync(stoppingToken);
-            _generationQueue.CompleteRequest(requestId, stream);
+            var stream = await _ollamaClient.GenerateStreamAsync(ollamaRequest, ctsToken);
+            
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(ctsToken);
+            try {
+                requestEntity.User.Tokens--;
+                requestEntity.Status = RequestStatus.Success;
+                requestEntity.FinishedAt = DateTime.UtcNow;
+                await dbContext.SaveChangesAsync(ctsToken);
+                await transaction.CommitAsync(ctsToken);
+                
+                _generationQueue.CompleteRequest(requestId, stream);
+            }
+            catch {
+                await transaction.RollbackAsync(ctsToken);
+                throw;
+            }
         }
         
         catch (Exception ex) {
             requestEntity.Status = RequestStatus.Failed;
             requestEntity.FinishedAt = DateTime.UtcNow;
-            await dbContext.SaveChangesAsync(stoppingToken);
+            await dbContext.SaveChangesAsync(ctsToken);
         }
     }
 }

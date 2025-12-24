@@ -20,7 +20,6 @@ using Neur.Server.Net.Postgres.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddCorsPolicy(builder.Configuration.GetSection("Services").Get<ServiceOptions>());
 builder.Services.AddDatabaseConfiguration();
 

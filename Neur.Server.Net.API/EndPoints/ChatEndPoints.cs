@@ -110,7 +110,7 @@ public static class ChatEndPoints {
     private static async Task<IResult> GetAllUserChats(ClaimsPrincipal claimsPrincipal, IChatService chatService) {
         var user = claimsPrincipal.ToCurrentUser();
         try {
-            var chats = await chatService.GetAllUserChats(user.userId);
+            var chats = await chatService.GetAllUserChatsAsync(user.userId);
             var result = chats.Select(chat => new GetChatResponse(chat.Id, chat.ModelId, chat.Model.Name,
                 chat.Model.ModelName, chat.CreatedAt, chat.UpdatedAt)
             ).ToList();
@@ -127,7 +127,7 @@ public static class ChatEndPoints {
 
     private static async Task<IResult> Get(ClaimsPrincipal claimsPrincipal, Guid id, IChatsRepository repository, IChatService chatService) {
         var user = claimsPrincipal.ToCurrentUser();
-        var chat = await repository.Get(id);
+        var chat = await repository.GetAsync(id);
         if (chat == null) {
             return Results.NotFound("Chat not found");
         }
