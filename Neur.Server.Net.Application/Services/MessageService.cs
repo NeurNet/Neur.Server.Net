@@ -1,3 +1,4 @@
+using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
@@ -12,9 +13,9 @@ public class MessageService : IMessageService {
         _messagesRepository  = messagesRepository;;
     }
     
-    public async Task<Guid> SaveMessageAsync(ChatEntity chat, MessageRole role, string content) {
+    public async Task<Guid> SaveMessageAsync(ChatEntity chat, MessageRole role, string content, CancellationToken token = default) {
         var messageEntity = new MessageEntity(chat.Id, DateTime.UtcNow, role, content);
-        await _messagesRepository.Add(messageEntity);
+        await _messagesRepository.AddAsync(messageEntity, token);
         return messageEntity.Id;
     }
 }

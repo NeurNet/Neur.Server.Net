@@ -12,10 +12,10 @@ public class ChatsRepository : IChatsRepository {
         _db = db;
     }
     
-    public async Task<Guid> Add(ChatEntity entity) {
+    public async Task<Guid> AddAsync(ChatEntity entity, CancellationToken token = default) {
         try {
             await _db.Chats.AddAsync(entity);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(token);
             return entity.Id;
         }
         catch (DbUpdateException ex) {
@@ -23,37 +23,37 @@ public class ChatsRepository : IChatsRepository {
         }
     }
 
-    public async Task<List<ChatEntity>> GetAllUserChats(Guid userId) {
+    public async Task<List<ChatEntity>> GetAllUserChatsAsync(Guid userId, CancellationToken token = default) {
         return 
             await _db.Chats
                 .AsNoTracking()
                 .Include(x => x.Model)
-                .ToListAsync();
+                .ToListAsync(token);
     }
 
-    public async Task<ChatEntity?> Get(Guid id) {
+    public async Task<ChatEntity?> GetAsync(Guid id, CancellationToken token = default) {
         return 
             await _db.Chats
                 .AsNoTracking()
                 .Where(x => x.Id == id)
                 .Include(x => x.User)
                 .Include(x => x.Model)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(token);
     }
 
-    public async Task<List<ChatEntity>> GetUserModelChats(Guid userId, Guid modelId) {
+    public async Task<List<ChatEntity>> GetUserModelChatsAsync(Guid userId, Guid modelId, CancellationToken token = default) {
         return 
             await _db.Chats
                 .AsNoTracking()
                 .Where(x => x.UserId == userId && x.ModelId == modelId)
                 .Include(x => x.Model)
-                .ToListAsync();
+                .ToListAsync(token);
     }
-    public async Task Delete(Guid id) {
-        var chat = await _db.Chats.Where(x => x.Id == id).FirstOrDefaultAsync();
+    public async Task DeleteAsync(Guid id,  CancellationToken token = default) {
+        var chat = await _db.Chats.Where(x => x.Id == id).FirstOrDefaultAsync(token);
         if (chat != null) {
             _db.Chats.Remove(chat);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(token);
         }
         else {
             throw new NullReferenceException();

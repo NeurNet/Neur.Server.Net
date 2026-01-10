@@ -8,7 +8,7 @@ public class UserEntity  : Entity {
     public string Username { get; init; }
     public string Name { get; init; }
     public string Surname { get; init; }
-    public UserRole Role { get; init; }
+    public UserRole Role { get; set; }
     public int Tokens { get; set; }
     public ICollection<ChatEntity> Chats { get; set; }
     private UserEntity() {}

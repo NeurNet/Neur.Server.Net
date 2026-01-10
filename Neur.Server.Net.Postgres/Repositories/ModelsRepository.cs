@@ -13,36 +13,24 @@ public class ModelsRepository : IModelsRepository {
         _db = context;
     }
 
-    public async Task Add(ModelEntity model) {
-        await _db.AddAsync(model);
-        await _db.SaveChangesAsync();
+    public async Task AddAsync(ModelEntity model, CancellationToken token = default) {
+        await _db.AddAsync(model, token);
+        await _db.SaveChangesAsync(token);
     }
 
-    public async Task Update(Guid id, string name, ModelType type, string version, ModelStatus status) {
+    public async Task DeleteAsync(Guid id, CancellationToken token = default) {
         await _db.Models
             .Where(model => model.Id == id)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(p => p.Name, name)
-                .SetProperty(p => p.Type, type)
-                .SetProperty(p => p.Version, version)
-                .SetProperty(p => p.Status, status)
-                .SetProperty(p => p.UpdatedAt, DateTime.UtcNow)
-            );
+            .ExecuteDeleteAsync(token);
     }
 
-    public async Task Delete(Guid id) {
-        await _db.Models
-            .Where(model => model.Id == id)
-            .ExecuteDeleteAsync();
-    }
-
-    public async Task<ModelEntity?> Get(Guid id) {
+    public async Task<ModelEntity?> GetAsync(Guid id, CancellationToken token = default) {
         return await _db.Models
             .AsNoTracking()
-            .FirstOrDefaultAsync(model => model.Id == id);
+            .FirstOrDefaultAsync(model => model.Id == id,  token);
     }
 
-    public async Task<List<ModelEntity>> GetAll() {
-        return await _db.Models.AsNoTracking().ToListAsync();
+    public async Task<List<ModelEntity>> GetAllAsync(CancellationToken token = default) {
+        return await _db.Models.AsNoTracking().ToListAsync(token);
     }
 }

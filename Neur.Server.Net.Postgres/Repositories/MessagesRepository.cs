@@ -12,21 +12,21 @@ public class MessagesRepository : IMessagesRepository {
         _db = context;
     }
     
-    public async Task Add(MessageEntity message) {
-        await _db.Messages.AddAsync(message);
-        await _db.SaveChangesAsync();
+    public async Task AddAsync(MessageEntity message, CancellationToken token = default) {
+        await _db.Messages.AddAsync(message, token);
+        await _db.SaveChangesAsync(token);
     }
 
-    public async Task<List<MessageEntity>> GetChatMessages(Guid chatId) {
+    public async Task<List<MessageEntity>> GetChatMessagesAsync(Guid chatId, CancellationToken token = default) {
         return
             await _db.Messages
                 .AsNoTracking()
                 .Where(m => m.ChatId == chatId)
                 .OrderBy(m => m.CreatedAt)
-                .ToListAsync();
+                .ToListAsync(token);
     }
 
-    public Task Delete(MessageEntity message) {
+    public Task DeleteAsync(MessageEntity message, CancellationToken token = default) {
         throw new NotImplementedException();
     }
 }
