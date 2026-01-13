@@ -36,13 +36,10 @@ public class UserService : IUserService {
         throw new Exception("UserRole doesn't exist");
     }
     public async Task<string> Login(string username, string password) {
-        var collegeUser = new AuthUserResponse("i24s0202", "admin", "Григорий Воробьёв");
-        if (username != "i24s0202") {
-            collegeUser = await _collegeClient.AuthenticateAsync(username, password);
-            if (collegeUser == null) {
-                throw new NullReferenceException();
-            }   
-        }
+        var collegeUser = await _collegeClient.AuthenticateAsync(username, password);
+        if (collegeUser == null) {
+            throw new NullReferenceException();
+        } 
 
         try {
             var user = await _usersRepository.GetByLdapIdAsync(username);
