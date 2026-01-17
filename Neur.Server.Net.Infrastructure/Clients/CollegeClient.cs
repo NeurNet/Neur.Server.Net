@@ -47,9 +47,6 @@ public class CollegeClient : ICollegeClient {
     /// <returns>User data if authentication success</returns>
     public async Task<AuthUserResponse?> AuthenticateAsync(string username, string password) {
         var userResponse = await SendAuthRequest(username, password);
-        if (userResponse != null) {
-            return userResponse;
-        }
-        return null;
+        return userResponse;
     }
 }

@@ -21,19 +21,10 @@ public static class RequestEndPoints {
 
     private static async Task<IResult> GetAll(ClaimsPrincipal claims, GenerationRequestService generationRequestService) {
         var user = claims.ToCurrentUser();
-
-        try {
-            var requests = await generationRequestService.GetAllGenerationRequests(user.userId);
-            return Results.Ok(requests.Select(x =>
-                new GenerationRequestResponse(x.Id, x.ModelId, x.Model.ModelName, x.TokenCost, x.Status, x.CreatedAt,
-                    x.StartedAt, x.FinishedAt))
-            );
-        }
-        catch (NotFoundException ex) {
-            return Results.NotFound(ex.Message);
-        }
-        catch (Exception ex) {
-            return Results.InternalServerError();
-        }
+        var requests = await generationRequestService.GetAllGenerationRequests(user.userId);
+        return Results.Ok(requests.Select(x =>
+            new GenerationRequestResponse(x.Id, x.ModelId, x.Model.ModelName, x.TokenCost, x.Status, x.CreatedAt,
+                x.StartedAt, x.FinishedAt))
+        );
     }
 }

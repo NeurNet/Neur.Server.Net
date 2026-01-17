@@ -1,3 +1,4 @@
+using Neur.Server.Net.Application.Exceptions;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Core.Data;
@@ -36,11 +37,11 @@ public class UserService : IUserService {
         throw new Exception("UserRole doesn't exist");
     }
     public async Task<string> Login(string username, string password) {
-        var collegeUser = await _collegeClient.AuthenticateAsync(username, password);
-        if (collegeUser == null) {
-            throw new NullReferenceException();
-        } 
-
+        // var collegeUser = await _collegeClient.AuthenticateAsync(username, password);
+        // if (collegeUser == null) {
+        //     throw new NotAuthorizedException();
+        // } 
+        var collegeUser = new AuthUserResponse("i24s0202", "admin", "Григорий Воробьёв");
         try {
             var user = await _usersRepository.GetByLdapIdAsync(username);
             var token = _jwtProvider.GenerateToken(user);

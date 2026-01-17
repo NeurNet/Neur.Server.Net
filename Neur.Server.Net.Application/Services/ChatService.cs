@@ -40,6 +40,12 @@ public class ChatService : IChatService {
         return contextManager.GetContext();
     }
     public async Task<ChatEntity> CreateChatAsync(Guid userId, Guid modelId, CancellationToken token = default) {
+        var model = await _dbContext.Models
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == modelId, token);
+        if (model == null) {
+            throw new NotFoundException("Model not found");
+        }
         var chat = new ChatEntity(
             userId: userId,
             modelId: modelId,
