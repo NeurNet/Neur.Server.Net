@@ -40,23 +40,15 @@ public static class UserEndPoints {
     }
     
     private static async Task<IResult> Login(UserLoginRequest req, IUserService userService, HttpResponse response, IOptions<JwtOptions> _jwtOptions) {
-        try {
-            var jwtOptions = _jwtOptions.Value;
-            var token = await userService.Login(req.username, req.password);
-            response.Cookies.Append("auth_token", token, new CookieOptions {
-                HttpOnly = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.Now.AddHours(jwtOptions.ExpiresHours)
-            });
+        var jwtOptions = _jwtOptions.Value;
+        var token = await userService.Login(req.username, req.password);
+        response.Cookies.Append("auth_token", token, new CookieOptions {
+            HttpOnly = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.Now.AddHours(jwtOptions.ExpiresHours)
+        });
 
-            return Results.Ok(new UserLoginResponse(token));
-        }
-        catch (NullReferenceException) {
-            return Results.Unauthorized();
-        }
-        catch (Exception ex) {
-            return Results.BadRequest(ex.Message);
-        }
+        return Results.Ok(new UserLoginResponse(token));
     }
 
     private static async Task<IResult> Logout(ClaimsPrincipal user, HttpResponse response) {

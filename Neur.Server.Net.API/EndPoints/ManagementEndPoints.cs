@@ -34,28 +34,12 @@ public static class ManagementEndPoints {
 
     private static async Task<IResult> GiveTokens(ClaimsPrincipal claims, [FromBody] GiveTokensRequest  request, ITokenService tokenService) {
         var user =  claims.ToCurrentUser();
-        try {
-            await tokenService.GiveTokens(user.userId, request.user_id, request.token_count);
-        }
-        catch (NotFoundException ex) {
-            return Results.NotFound(ex.Message);
-        }
-        catch (BillingException ex) {
-            return Results.BadRequest(ex.Message);
-        }
+        await tokenService.GiveTokens(user.userId, request.user_id, request.token_count);
         return Results.Ok();
     }
 
     private static async Task<IResult> ChangeUserRole([FromBody] ChangeUserRoleRequest req, IUserService userService) {
-        try {
-            await userService.ChangeUserRole(req.user_id, req.role);
-            return Results.Ok();
-        }
-        catch (NotFoundException ex) {
-            return Results.NotFound(ex.Message);
-        }
-        catch (Exception) {
-            return Results.InternalServerError();
-        }
+        await userService.ChangeUserRole(req.user_id, req.role);
+        return Results.Ok();
     }
 }

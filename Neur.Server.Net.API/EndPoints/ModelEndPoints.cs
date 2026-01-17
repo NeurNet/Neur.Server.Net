@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Neur.Server.Net.API.Contracts.Models;
 using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.API.Validators;
+using Neur.Server.Net.Application.Exceptions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
@@ -33,30 +34,24 @@ public static class ModelEndPoints {
     }
 
     private static async Task<IResult> Add([FromBody] CreateModelReqest req, [FromServices] IModelService modelService) {
-        try {
-            var validator = new CreateModelRequestValidator();
-            var result = validator.Validate(req);
+        var validator = new CreateModelRequestValidator();
+        var result = validator.Validate(req);
 
-            if (result.IsValid) {
-                var model = new ModelEntity(
-                    name: req.name,
-                    modelName: req.model,
-                    req.context ?? "",
-                    type: Enum.Parse<ModelType>(req.type),
-                    version: req.version ?? "0.1",
-                    status: Enum.Parse<ModelStatus>(req.status),
-                    createdAt: DateTime.UtcNow
-                );
-                var createdModel = await modelService.CreateAsync(model);
-                return Results.Ok(new CreateModelResponse(createdModel.Id.ToString()));
-            }
-
-            throw new ValidationException(result.Errors[0].ErrorMessage);
+        if (result.IsValid) {
+            var model = new ModelEntity(
+                name: req.name,
+                modelName: req.model,
+                req.context ?? "",
+                type: Enum.Parse<ModelType>(req.type),
+                version: req.version ?? "0.1",
+                status: Enum.Parse<ModelStatus>(req.status),
+                createdAt: DateTime.UtcNow
+            );
+            var createdModel = await modelService.CreateAsync(model);
+            return Results.Ok(new CreateModelResponse(createdModel.Id.ToString()));
         }
 
-        catch (ValidationException e) {
-            return Results.BadRequest(e.Message);
-        }
+        throw new ValidateException(result.Errors[0].ErrorMessage);
     }
 
     private static async Task<IResult> GetAll(ClaimsPrincipal claims, [FromServices] IModelService modelService) {

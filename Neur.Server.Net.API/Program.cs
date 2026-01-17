@@ -3,6 +3,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Neur.Server.Net.API;
 using Neur.Server.Net.API.Extensions;
+using Neur.Server.Net.API.Middleware;
 using Neur.Server.Net.API.Options;
 using Neur.Server.Net.API.Validators;
 using Neur.Server.Net.Application.Clients;
@@ -59,6 +60,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 
 var app = builder.Build();
+app.UseMiddleware<MiddlewareHandler>();
 
 // if (app.Environment.IsDevelopment()) {
 //     app.UseSwagger();
