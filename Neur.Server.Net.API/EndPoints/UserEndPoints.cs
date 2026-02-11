@@ -35,7 +35,13 @@ public static class UserEndPoints {
             .Produces<List<UserResponse>>()
             .Produces(401)
             .RequireAuthorization("TeacherOrAdmin");
-        
+        endpoints.MapGet("/{id}", GetById)
+            .WithSummary("Получить пользователя по ID")
+            .Produces<UserResponse>(200)
+            .Produces(401)
+            .Produces(404)
+            .RequireAuthorization("TeacherOrAdmin");
+
         return endpoints;
     }
     
@@ -74,6 +80,23 @@ public static class UserEndPoints {
             x.Surname,
             x.Role,
             x.Tokens
+        ));
+    }
+
+    private static async Task<IResult> GetById(Guid id, IUsersRepository userRepository) {
+        var user = await userRepository.GetByIdAsync(id);
+
+        if (user == null) {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(new UserResponse(
+            user.Id,
+            user.Username,
+            user.Name,
+            user.Surname,
+            user.Role,
+            user.Tokens
         ));
     }
 }
