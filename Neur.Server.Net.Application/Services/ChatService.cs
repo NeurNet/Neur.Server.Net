@@ -94,7 +94,7 @@ public class ChatService : IChatService {
         return await _chatsRepository.GetAllUserChatsAsync(userId, token);
     }
     
-        public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt, CancellationToken token) {
+    public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt, CancellationToken token) {
         var user = await _dbContext.Users
             .AsNoTracking()
             .Where(x => x.Id == userId)
