@@ -41,7 +41,7 @@ public class UserService : IUserService {
         // if (collegeUser == null) {
         //     throw new NotAuthorizedException();
         // } 
-        var collegeUser = new AuthUserResponse("i24s0202", "admin", "Григорий Воробьёв");
+        var collegeUser = new AuthUserResponse("i24s0202", "teacher", "Григорий Воробьёв");
         try {
             var user = await _usersRepository.GetByLdapIdAsync(username);
             var token = _jwtProvider.GenerateToken(user);
