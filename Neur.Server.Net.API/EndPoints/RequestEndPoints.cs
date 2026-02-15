@@ -13,7 +13,7 @@ public static class RequestEndPoints {
             .WithTags("Generation Requests")
             .RequireAuthorization("TeacherOrAdmin");
 
-        endpoints.MapPost(String.Empty, GetAll)
+        endpoints.MapGet(String.Empty, GetAll)
             .WithSummary("Получить список всех запросов пользователей");
         
         return endpoints;
