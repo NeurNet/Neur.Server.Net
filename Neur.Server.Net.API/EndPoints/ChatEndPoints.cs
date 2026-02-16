@@ -59,7 +59,7 @@ public static class ChatEndPoints {
         return Results.Ok(new CreateChatResponse(chat.Id, chat.ModelId));
     }
 
-    private static async Task Generate(Guid id, [FromBody] GenerateRequest request, GenerationQueueService generationQueueService, 
+    private static async Task Generate(Guid id, [FromBody] GenerateRequest request, 
         IChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context) {
         
         var user = claimsPrincipal.ToCurrentUser();
@@ -75,7 +75,7 @@ public static class ChatEndPoints {
             await context.Response.Body.FlushAsync();
         }
 
-        await context.Response.Body.FlushAsync();
+        await context.Response.CompleteAsync();
     }
 
     private static async Task<IResult> GetAllUserChats(ClaimsPrincipal claimsPrincipal, IChatService chatService) {

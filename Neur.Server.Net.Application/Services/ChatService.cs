@@ -119,6 +119,7 @@ public class ChatService : IChatService {
             modelResponse += chunk;
             yield return chunk;
         }
+        chat.UpdatedAt = DateTime.UtcNow;
         await _messageService.SaveMessageAsync(chat, MessageRole.Assistant, modelResponse, token);
     }
 }
