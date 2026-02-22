@@ -64,7 +64,7 @@ public static class ChatEndPoints {
         
         var user = claimsPrincipal.ToCurrentUser();
         var ctsToken = new CancellationTokenSource();
-        ctsToken.CancelAfter(TimeSpan.FromSeconds(30));
+        ctsToken.CancelAfter(TimeSpan.FromSeconds(80));
         
         context.Response.ContentType = "text/event-stream";
         context.Response.Headers["Cache-Control"] = "no-cache";

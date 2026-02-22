@@ -13,11 +13,11 @@ public class ApplicationDbContext : DbContext {
         _configuration = configuration;
     }
     
-    public DbSet<UserEntity> Users { get; set; }
-    public DbSet<ModelEntity> Models { get; set; }
-    public DbSet<ChatEntity> Chats { get; set; }
-    public DbSet<GenerationRequestEntity> GenerationRequests { get; set; }
-    public DbSet<MessageEntity> Messages { get; set; }
+    public virtual DbSet<UserEntity> Users { get; set; }
+    public virtual DbSet<ModelEntity> Models { get; set; }
+    public virtual DbSet<ChatEntity> Chats { get; set; }
+    public virtual DbSet<GenerationRequestEntity> GenerationRequests { get; set; }
+    public virtual DbSet<MessageEntity> Messages { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         optionsBuilder
