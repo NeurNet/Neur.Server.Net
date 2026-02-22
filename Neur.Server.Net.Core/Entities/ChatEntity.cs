@@ -10,7 +10,7 @@ public class ChatEntity : Entity {
     
     // Навигационные свойства
     public UserEntity User { get; init; }
-    public ModelEntity Model { get; private set; }
+    public ModelEntity Model { get; init; }
     
     public ChatEntity(Guid modelId, Guid userId, DateTime createdAt, DateTime? updatedAt = null) {
         Id = Guid.NewGuid();

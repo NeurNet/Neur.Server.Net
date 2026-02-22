@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Exeptions;
+using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Infrastructure.Clients;
@@ -12,7 +13,7 @@ using Neur.Server.Net.Postgres;
 
 namespace Neur.Server.Net.Application.Services.Background;
 
-public class GenerationService : BackgroundService {
+public class GenerationService : BackgroundService, IGenerationService {
     private readonly GenerationQueueService _generationQueue;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IOllamaClient _ollamaClient;
@@ -108,7 +109,7 @@ public class GenerationService : BackgroundService {
             }
             catch {
                 await transaction.RollbackAsync(ctsToken);
-                throw;
+                throw new Exception("Transaction failed");
             }
         }
         

@@ -24,7 +24,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCorsPolicy(builder.Configuration.GetSection("Services").Get<ServiceOptions>());
 builder.Services.AddDatabaseConfiguration();
 
-builder.Services.AddSingleton<GenerationService>();
+builder.Services.AddSingleton<IGenerationService, GenerationService>();
 builder.Services.AddSingleton<GenerationQueueService>();
 builder.Services.AddHostedService<GenerationService>();
 builder.Services.AddSwaggerApi();

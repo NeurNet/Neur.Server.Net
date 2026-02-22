@@ -18,11 +18,11 @@ namespace Neur.Server.Net.Application.Services;
 
 public class ChatService : IChatService {
     private readonly ApplicationDbContext _dbContext;
-    private readonly GenerationService _generationService;
+    private readonly IGenerationService _generationService;
     private readonly IMessageService _messageService;
     private readonly IMessagesRepository _messagesRepository;
     private readonly IChatsRepository _chatsRepository;
-    public ChatService(ApplicationDbContext dbContext, GenerationService generationService,
+    public ChatService(ApplicationDbContext dbContext, IGenerationService generationService,
         IChatsRepository chatsRepository, IMessagesRepository messagesRepository, IMessageService messageService) {
         _dbContext = dbContext;
         _generationService = generationService;
@@ -52,12 +52,7 @@ public class ChatService : IChatService {
             createdAt:  DateTime.UtcNow
         );
         await _chatsRepository.AddAsync(chat, token);
-        
-        var savedChat = await _chatsRepository.GetAsync(chat.Id, token);
-        if (savedChat != null) {
-            return savedChat;   
-        }
-        throw new Exception("Error getting the chat after create");
+        return chat;
     }
 
     public async Task DeleteChatAsync(Guid chatId, Guid userId, CancellationToken token = default) {
