@@ -1,37 +1,33 @@
-using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
-using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Extensions;
 using Neur.Server.Net.Application.Interfaces;
-using Neur.Server.Net.Application.Services.Background;
+using Neur.Server.Net.Application.Interfaces.Services;
 using Neur.Server.Net.Application.Services.DTO.ChatService;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure;
-using Neur.Server.Net.Infrastructure.Clients;
-using Neur.Server.Net.Postgres;
 
 namespace Neur.Server.Net.Application.Services;
 
 public class ChatService : IChatService {
-    private readonly ApplicationDbContext _dbContext;
+    private readonly IUsersRepository _usersRepository;
+    private readonly IModelsRepository _modelsRepository;
     private readonly IGenerationService _generationService;
     private readonly IMessageService _messageService;
-    private readonly IMessagesRepository _messagesRepository;
     private readonly IChatsRepository _chatsRepository;
-    public ChatService(ApplicationDbContext dbContext, IGenerationService generationService,
-        IChatsRepository chatsRepository, IMessagesRepository messagesRepository, IMessageService messageService) {
-        _dbContext = dbContext;
+
+    public ChatService(IGenerationService generationService,
+        IChatsRepository chatsRepository, IMessageService messageService,
+        IUsersRepository usersRepository, IModelsRepository modelsRepository) {
+        _usersRepository = usersRepository;
+        _modelsRepository = modelsRepository;
         _generationService = generationService;
         _chatsRepository = chatsRepository;
-        _messagesRepository = messagesRepository;
         _messageService = messageService;
     }
     private async Task<string> ReadContextAsync(Guid chatId, string currentMessage, string baseContext, CancellationToken token = default) {
-        List<MessageEntity> messages = await _messagesRepository.GetChatMessagesAsync(chatId, token);
+        List<MessageEntity> messages = await _messageService.GetChatMessagesAsync(chatId, token);
         var contextManager = new ContextManager(1000);
         
         contextManager.AddBaseContext(baseContext);
@@ -40,9 +36,7 @@ public class ChatService : IChatService {
         return contextManager.GetContext();
     }
     public async Task<ChatEntity> CreateChatAsync(Guid userId, Guid modelId, CancellationToken token = default) {
-        var model = await _dbContext.Models
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Id == modelId, token);
+        var model = await _modelsRepository.GetAsync(modelId, token);
         if (model == null) {
             throw new NotFoundException("Model not found");
         }
@@ -56,49 +50,34 @@ public class ChatService : IChatService {
     }
 
     public async Task DeleteChatAsync(Guid chatId, Guid userId, CancellationToken token = default) {
-        var chat = await _dbContext.Chats.Where(x => x.Id == chatId && x.UserId == userId).FirstOrDefaultAsync(token);
+        var chat = await _chatsRepository.GetAsync(chatId, token);
         if (chat == null) {
             throw new NotFoundException("Chat not found");
         }
-        
-        _dbContext.Chats.Remove(chat);
-        await _dbContext.SaveChangesAsync(token);
+        await _chatsRepository.DeleteAsync(chatId, token);
     }
 
     public async Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, Guid userId, CancellationToken token = default) {
-        var chat = await _dbContext.Chats
-            .AsNoTracking()
-            .Where(x => x.Id == chatId && x.UserId == userId)
-            .Include(x => x.Model)
-            .FirstOrDefaultAsync(token);
-        
+        var chat = await _chatsRepository.GetAsync(chatId, token);
         if (chat == null) {
             throw new NotFoundException("Chat not found");
         }
         
-        var messages = await _messagesRepository.GetChatMessagesAsync(chatId, token);
+        var messages = await _messageService.GetChatMessagesAsync(chatId, token);
         return chat.ToResponse(messages);
     }
 
     public async Task<List<ChatEntity>> GetAllUserChatsAsync(Guid userId, CancellationToken token = default) {
-        var user  = await _dbContext.Users.AsNoTracking().Where(x => x.Id == userId).FirstOrDefaultAsync(token);
+        var user = await _usersRepository.GetByIdAsync(userId, token: token);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-
         return await _chatsRepository.GetAllUserChatsAsync(userId, token);
     }
     
     public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt, CancellationToken token) {
-        var user = await _dbContext.Users
-            .AsNoTracking()
-            .Where(x => x.Id == userId)
-            .FirstOrDefaultAsync(token);
-        var chat = await _dbContext.Chats
-            .AsNoTracking()
-            .Where(x => x.Id == chatId && x.UserId == userId)
-            .Include(x => x.Model)
-            .FirstOrDefaultAsync(token);
+        var user = await _usersRepository.GetByIdAsync(userId, true, token: token);
+        var chat = await _chatsRepository.GetWithModelAsync(chatId, tracking: true, token: token);
         
         if (user == null || chat == null) {
             throw new NotFoundException();

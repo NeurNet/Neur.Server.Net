@@ -7,7 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Neur.Server.Net.Infrastructure\Neur.Server.Net.Infrastructure.csproj" />
       <ProjectReference Include="..\Neur.Server.Net.Postgres\Neur.Server.Net.Postgres.csproj" />
     </ItemGroup>
 

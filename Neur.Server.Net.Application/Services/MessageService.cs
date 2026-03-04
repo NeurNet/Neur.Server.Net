@@ -1,4 +1,5 @@
 using Neur.Server.Net.Application.Interfaces;
+using Neur.Server.Net.Application.Interfaces.Services;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
@@ -17,5 +18,9 @@ public class MessageService : IMessageService {
         var messageEntity = new MessageEntity(chat.Id, DateTime.UtcNow, role, content);
         await _messagesRepository.AddAsync(messageEntity, token);
         return messageEntity.Id;
+    }
+    
+    public async Task<List<MessageEntity>> GetChatMessagesAsync(Guid chatId, CancellationToken token = default) {
+        return await _messagesRepository.GetChatMessagesAsync(chatId, token);
     }
 }

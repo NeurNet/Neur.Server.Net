@@ -3,7 +3,7 @@ using Neur.Server.Net.Core.Entities;
 
 namespace Neur.Server.Net.Infrastructure;
 
-public class ContextManager {
+public class ContextManager : IContextManager {
     private StringBuilder _sb;
     private readonly int _maxLength;
     

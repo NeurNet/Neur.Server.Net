@@ -37,8 +37,24 @@ public class ChatsRepository : IChatsRepository {
             await _db.Chats
                 .AsNoTracking()
                 .Where(x => x.Id == id)
-                .Include(x => x.User)
+                .FirstOrDefaultAsync(token);
+    }
+    
+    public async Task<ChatEntity?> GetWithModelAsync(Guid id, bool tracking = false, CancellationToken token = default) {
+        var query = tracking ? _db.Chats : _db.Chats.AsNoTracking();
+        return
+            await query
+                .Where(x => x.Id == id)
                 .Include(x => x.Model)
+                .FirstOrDefaultAsync(token);
+    }
+    
+    public async Task<ChatEntity?> GetWithUserAsync(Guid id, CancellationToken token = default) {
+        return 
+            await _db.Chats
+                .AsNoTracking()
+                .Where(x => x.Id == id)
+                .Include(x => x.User)
                 .FirstOrDefaultAsync(token);
     }
 

@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
+using Neur.Server.Net.Application.Interfaces.Clients;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Infrastructure.Clients;
@@ -51,7 +51,7 @@ public class GenerationService : BackgroundService, IGenerationService {
         await _generationQueue.EnqueueAsync(generationRequest.Id);
         var stream = await _generationQueue.WaitForResultAsync(generationRequest.Id, ctsToken);
         
-        await foreach (var chunk in OllamaClient.DeserializeStream(stream, ctsToken)) {
+        await foreach (var chunk in _ollamaClient.DeserializeStream(stream, ctsToken)) {
             yield return chunk;
         }
     }
@@ -93,27 +93,23 @@ public class GenerationService : BackgroundService, IGenerationService {
         requestEntity.Status = RequestStatus.InProgress;
         await dbContext.SaveChangesAsync(ctsToken);
 
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(ctsToken);
+        
         try {
             var ollamaRequest = new OllamaRequest(requestEntity.Model.ModelName, requestEntity.Prompt);
             var stream = await _ollamaClient.GenerateStreamAsync(ollamaRequest, ctsToken);
             
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(ctsToken);
-            try {
-                requestEntity.User.Tokens--;
-                requestEntity.Status = RequestStatus.Success;
-                requestEntity.FinishedAt = DateTime.UtcNow;
-                await dbContext.SaveChangesAsync(ctsToken);
-                await transaction.CommitAsync(ctsToken);
-                
-                _generationQueue.CompleteRequest(requestId, stream);
-            }
-            catch {
-                await transaction.RollbackAsync(ctsToken);
-                throw new Exception("Transaction failed");
-            }
+            _generationQueue.CompleteRequest(requestId, stream);
+            
+            requestEntity.User.Tokens--;
+            requestEntity.Status = RequestStatus.Success;
+            requestEntity.FinishedAt = DateTime.UtcNow;
+            await dbContext.SaveChangesAsync(ctsToken);
+            await transaction.CommitAsync(ctsToken);
         }
         
         catch (Exception ex) {
+            await transaction.RollbackAsync(ctsToken);
             requestEntity.Status = RequestStatus.Failed;
             requestEntity.FinishedAt = DateTime.UtcNow;
             await dbContext.SaveChangesAsync(ctsToken);
