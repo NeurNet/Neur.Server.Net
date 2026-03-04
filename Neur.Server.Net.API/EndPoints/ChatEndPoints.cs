@@ -71,7 +71,7 @@ public static class ChatEndPoints {
         context.Response.Headers["Connection"] = "keep-alive";
 
         await foreach (var chunk in chatService.ProcessPromptAsync(id, user.userId, request.prompt, ctsToken.Token)) {
-            await context.Response.WriteAsync(chunk);
+            await context.Response.WriteAsync($"data: {chunk}\n\n");
             await context.Response.Body.FlushAsync();
         }
 
