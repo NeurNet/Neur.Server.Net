@@ -28,6 +28,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Neur.Server.Net.Application\Neur.Server.Net.Application.csproj" />
+      <ProjectReference Include="..\Neur.Server.Net.Infrastructure\Neur.Server.Net.Infrastructure.csproj" />
       <ProjectReference Include="..\Neur.Server.Net.Postgres\Neur.Server.Net.Postgres.csproj" />
     </ItemGroup>
 

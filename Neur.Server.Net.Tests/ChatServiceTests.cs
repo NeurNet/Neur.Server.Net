@@ -1,34 +1,31 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Moq;
-using MockQueryable.Moq;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
+using Neur.Server.Net.Application.Interfaces.Services;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Records;
 using Neur.Server.Net.Core.Repositories;
-using Neur.Server.Net.Postgres;
 
 public class ChatServiceTests {
-    // Моки зависимостей
-    private readonly Mock<ApplicationDbContext> _dbContext = new(Mock.Of<IConfiguration>());
     private readonly Mock<IGenerationService> _generationService = new();
     private readonly Mock<IMessageService> _messageService = new();
     private readonly Mock<IChatsRepository> _chatsRepository = new();
-    private readonly Mock<IMessagesRepository> _messagesRepository = new();
+    private readonly Mock<IUsersRepository> _usersRepository = new();
+    private readonly Mock<IModelsRepository> _modelsRepository = new();
 
     private readonly ChatService _sut;
 
     public ChatServiceTests() {
         _sut = new ChatService(
-            _dbContext.Object,
             _generationService.Object,
             _chatsRepository.Object,
-            _messagesRepository.Object,
-            _messageService.Object
+            _messageService.Object,
+            _usersRepository.Object,
+            _modelsRepository.Object
         );
     }
 
@@ -48,27 +45,16 @@ public class ChatServiceTests {
             Id = id,
         };
 
-    private void SetupDbUsers(params UserEntity[] users) {
-        var mock = users.BuildMockDbSet();
-        _dbContext.Setup(x => x.Users).Returns(mock.Object);
-    }
-
-    private void SetupDbChats(params ChatEntity[] chats) {
-        var mock = chats.BuildMockDbSet();
-        _dbContext.Setup(x => x.Chats).Returns(mock.Object);
-    }
-
-    private void SetupDbModels(params ModelEntity[] models) {
-        var mock = models.BuildMockDbSet();
-        _dbContext.Setup(x => x.Models).Returns(mock.Object);
-    }
-
     // --- Тесты ---
 
     [Fact]
     public async Task ProcessPromptAsync_UserNotFound_ThrowsNotFoundException() {
-        SetupDbUsers(); // пустая таблица
-        SetupDbChats();
+        _usersRepository
+            .Setup(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserEntity?)null);
+        _chatsRepository
+            .Setup(x => x.GetWithModelAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ChatEntity?)null);
 
         var act = () => _sut.ProcessPromptAsync(Guid.NewGuid(), Guid.NewGuid(), "hello", CancellationToken.None)
             .ToListAsync().AsTask();
@@ -81,8 +67,12 @@ public class ChatServiceTests {
         var userId = Guid.NewGuid();
         var chatId = Guid.NewGuid();
 
-        SetupDbUsers(MakeUser(userId, tokens: 0)); // баланс нулевой
-        SetupDbChats(MakeChat(chatId, userId));
+        _usersRepository
+            .Setup(x => x.GetByIdAsync(userId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakeUser(userId, tokens: 0));
+        _chatsRepository
+            .Setup(x => x.GetWithModelAsync(chatId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakeChat(chatId, userId));
 
         var act = () => _sut.ProcessPromptAsync(chatId, userId, "hello", CancellationToken.None)
             .ToListAsync().AsTask();
@@ -97,17 +87,19 @@ public class ChatServiceTests {
         var chatId = Guid.NewGuid();
         var chunks = new[] { "Hello", " world" };
 
-        SetupDbUsers(MakeUser(userId));
-        SetupDbChats(MakeChat(chatId, userId));
+        _usersRepository
+            .Setup(x => x.GetByIdAsync(userId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakeUser(userId));
+        _chatsRepository
+            .Setup(x => x.GetWithModelAsync(chatId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakeChat(chatId, userId));
 
-        _messagesRepository
+        _messageService
             .Setup(x => x.GetChatMessagesAsync(chatId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MessageEntity>());
-
         _generationService
             .Setup(x => x.StreamGeneration(It.IsAny<Guid>(), userId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(chunks.ToAsyncEnumerable());
-
         _messageService
             .Setup(x => x.SaveMessageAsync(It.IsAny<ChatEntity>(), It.IsAny<MessageRole>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Guid.NewGuid());
@@ -123,17 +115,19 @@ public class ChatServiceTests {
         var userId = Guid.NewGuid();
         var chatId = Guid.NewGuid();
 
-        SetupDbUsers(MakeUser(userId));
-        SetupDbChats(MakeChat(chatId, userId));
+        _usersRepository
+            .Setup(x => x.GetByIdAsync(userId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakeUser(userId));
+        _chatsRepository
+            .Setup(x => x.GetWithModelAsync(chatId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakeChat(chatId, userId));
 
-        _messagesRepository
+        _messageService
             .Setup(x => x.GetChatMessagesAsync(chatId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<MessageEntity>());
-
         _generationService
             .Setup(x => x.StreamGeneration(It.IsAny<Guid>(), userId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(new[] { "response" }.ToAsyncEnumerable());
-
         _messageService
             .Setup(x => x.SaveMessageAsync(It.IsAny<ChatEntity>(), It.IsAny<MessageRole>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Guid.NewGuid());
@@ -141,7 +135,6 @@ public class ChatServiceTests {
         await _sut.ProcessPromptAsync(chatId, userId, "user prompt", CancellationToken.None)
             .ToListAsync();
 
-        // Проверяем что сохранились оба сообщения: от юзера и от ассистента
         _messageService.Verify(
             x => x.SaveMessageAsync(It.IsAny<ChatEntity>(), MessageRole.User, "user prompt", It.IsAny<CancellationToken>()),
             Times.Once
@@ -154,13 +147,11 @@ public class ChatServiceTests {
 
     [Fact]
     public async Task CreateChatAsync_ModelNotFound_ThrowsNotFoundException() {
-        var userId = Guid.NewGuid();
-        
-        SetupDbUsers(MakeUser(userId));
-        SetupDbModels();
-        var chat = MakeChat(Guid.NewGuid(), userId);
+        _modelsRepository
+            .Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ModelEntity?)null);
 
-        var act = () => _sut.CreateChatAsync(chat.Id, Guid.NewGuid(), CancellationToken.None);
+        var act = () => _sut.CreateChatAsync(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None);
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
@@ -168,15 +159,16 @@ public class ChatServiceTests {
     public async Task CreateChatAsync_ValidRequest_CreateUserChat() {
         var userId = Guid.NewGuid();
         var modelId = Guid.NewGuid();
-        
-        SetupDbModels(MakeModel(modelId));
 
+        _modelsRepository
+            .Setup(x => x.GetAsync(modelId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakeModel(modelId));
         _chatsRepository
             .Setup(x => x.AddAsync(It.IsAny<ChatEntity>(), It.IsAny<CancellationToken>()))
-            .Returns(Task<Guid>.Factory.StartNew(() => Guid.NewGuid()));
-        
+            .ReturnsAsync(Guid.NewGuid());
+
         var result = await _sut.CreateChatAsync(userId, modelId, CancellationToken.None);
-        
+
         result.UserId.Should().Be(userId);
         result.ModelId.Should().Be(modelId);
     }

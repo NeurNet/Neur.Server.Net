@@ -1,6 +1,7 @@
 using Neur.Server.Net.Application.Exceptions;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
+using Neur.Server.Net.Application.Interfaces.Clients;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Records;

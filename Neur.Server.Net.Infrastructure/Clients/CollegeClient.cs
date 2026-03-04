@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.Application.Clients.Options;
+using Neur.Server.Net.Application.Interfaces.Clients;
 using Neur.Server.Net.Infrastructure.Clients.Contracts.CollegeClient;
 using Neur.Server.Net.Infrastructure.Interfaces;
 

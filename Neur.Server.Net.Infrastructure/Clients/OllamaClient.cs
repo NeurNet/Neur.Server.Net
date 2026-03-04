@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.Application.Clients.Options;
+using Neur.Server.Net.Application.Interfaces.Clients;
 using Neur.Server.Net.Infrastructure.Clients.Contracts.OllamaClient;
 using Neur.Server.Net.Infrastructure.Interfaces;
 
@@ -23,18 +24,6 @@ public class OllamaClient : IOllamaClient {
         _httpClient = httpClient;
         _options = options.Value;
     }
-
-    public static async IAsyncEnumerable<string> DeserializeStream(Stream stream, CancellationToken token) {
-        using var reader = new StreamReader(stream);
-        while (!reader.EndOfStream && !token.IsCancellationRequested) {
-            var line = await reader.ReadLineAsync();
-            if (line == null) continue;
-            var content = JsonSerializer.Deserialize<OllamaResponse>(line);
-            if (content == null) continue;
-            
-            yield return content.response;
-        }
-    }
     
     /// <summary>
     /// The method of sending a generation request to Ollama
@@ -54,5 +43,17 @@ public class OllamaClient : IOllamaClient {
         response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadAsStreamAsync(cts);
+    }
+    
+    public async IAsyncEnumerable<string> DeserializeStream(Stream stream, CancellationToken token) {
+        using var reader = new StreamReader(stream);
+        while (!reader.EndOfStream && !token.IsCancellationRequested) {
+            var line = await reader.ReadLineAsync();
+            if (line == null) continue;
+            var content = JsonSerializer.Deserialize<OllamaResponse>(line);
+            if (content == null) continue;
+            
+            yield return content.response;
+        }
     }
 }

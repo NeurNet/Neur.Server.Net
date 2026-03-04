@@ -9,6 +9,8 @@ using Neur.Server.Net.API.Validators;
 using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Clients.Options;
 using Neur.Server.Net.Application.Interfaces;
+using Neur.Server.Net.Application.Interfaces.Clients;
+using Neur.Server.Net.Application.Interfaces.Services;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Application.Services.Background;
 using Neur.Server.Net.Core.Repositories;
