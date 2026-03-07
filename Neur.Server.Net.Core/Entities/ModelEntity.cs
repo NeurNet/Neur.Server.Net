@@ -16,7 +16,20 @@ public class ModelEntity : Entity {
     
     private ModelEntity() {}
 
-    public ModelEntity(string name, string modelName, string context, ModelType type, string version, 
+    public ModelEntity(Guid id, string name, string modelName, string context, ModelType type, string version,
+        ModelStatus status, DateTime createdAt, DateTime? updatedAt = null) {
+        Id = id;
+        Name = name;
+        ModelName = modelName;
+        Context = context;
+        Type = type;
+        Version = version;
+        Status = status;
+        CreatedAt = createdAt;
+        UpdatedAt = updatedAt;
+    }
+
+    public ModelEntity(string name, string modelName, string context, ModelType type, string version,
         ModelStatus status, DateTime createdAt, DateTime? updatedAt = null) {
         Id = Guid.NewGuid();
         Name = name;

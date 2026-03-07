@@ -18,15 +18,14 @@ public class ModelsRepository : IModelsRepository {
         await _db.SaveChangesAsync(token);
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken token = default) {
+    public async Task DeleteAsync(ModelEntity model, CancellationToken token = default) {
         await _db.Models
-            .Where(model => model.Id == id)
-            .ExecuteDeleteAsync(token);
+            .Where(m => m.Id == model.Id)
+            .ExecuteDeleteAsync();
     }
 
     public async Task<ModelEntity?> GetAsync(Guid id, CancellationToken token = default) {
         return await _db.Models
-            .AsNoTracking()
             .FirstOrDefaultAsync(model => model.Id == id,  token);
     }
 

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Neur.Server.Net.API.Contracts.Models;
 
-public record CreateModelReqest (
+public record UpdateModelRequest(
     [Required] string name,
     [Required] string model,
     [Required] string context,

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
+using Neur.Server.Net.Application.Interfaces.Services;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Records;
@@ -23,7 +24,7 @@ public class ModelService : IModelService {
     public async Task<ModelEntity> CreateAsync(ModelEntity model, CancellationToken token = default) {
         await _modelsRepository.AddAsync(model,  token);
         var savedModel = await _modelsRepository.GetAsync(model.Id,  token);
-
+        
         if (savedModel != null) {
             return savedModel;
         }
@@ -31,8 +32,12 @@ public class ModelService : IModelService {
         throw new Exception("Error getting the model after create");
     }
 
-    public async Task<ModelEntity?> GetAsync(Guid id,  CancellationToken token = default) {
-        return await _modelsRepository.GetAsync(id, token);
+    public async Task<ModelEntity> GetAsync(Guid id,  CancellationToken token = default) {
+        var model = await _modelsRepository.GetAsync(id, token);
+        if (model == null) {
+            throw new NotFoundException("Model not found");
+        }
+        return model;
     }
 
     public async Task<IEnumerable<ModelEntity>> GetAllByUserRoleAsync(Guid userId, CancellationToken token = default) {
@@ -53,7 +58,7 @@ public class ModelService : IModelService {
         var existingModel = await _modelsRepository.GetAsync(model.Id);
 
         if (existingModel == null) {
-            throw new Exception("Model not found");
+            throw new NotFoundException("Model not found");
         }
 
         existingModel.Name = model.Name;
@@ -68,6 +73,10 @@ public class ModelService : IModelService {
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken token = default) {
-        await _modelsRepository.DeleteAsync(id, token);
+        var model = await _modelsRepository.GetAsync(id, token);
+        if (model == null) {
+            throw new NotFoundException("Model not found");
+        }
+        await _modelsRepository.DeleteAsync(model, token);
     }
 }
