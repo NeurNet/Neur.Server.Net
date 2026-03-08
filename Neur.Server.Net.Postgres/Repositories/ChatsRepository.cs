@@ -32,11 +32,12 @@ public class ChatsRepository : IChatsRepository {
                 .ToListAsync(token);
     }
 
-    public async Task<ChatEntity?> GetAsync(Guid id, CancellationToken token = default) {
+    public async Task<ChatEntity?> GetAsync(Guid id, bool tracking = false, CancellationToken token = default) {
+        var query = tracking ? _db.Chats : _db.Chats.AsNoTracking();
         return 
-            await _db.Chats
-                .AsNoTracking()
+            await query
                 .Where(x => x.Id == id)
+                .Include(x => x.Model)
                 .FirstOrDefaultAsync(token);
     }
     

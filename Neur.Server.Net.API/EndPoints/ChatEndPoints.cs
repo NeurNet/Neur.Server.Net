@@ -7,6 +7,7 @@ using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Data;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
+using Neur.Server.Net.Application.Interfaces.Services;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Application.Services.Background;
 using Neur.Server.Net.Application.Services.DTO.ChatService;
@@ -20,8 +21,8 @@ public static class ChatEndPoints {
     public static IEndpointRouteBuilder MapChatsEndPoints(this IEndpointRouteBuilder app) {
         var endpoints = app.MapGroup("/api/chats")
             .WithTags("Chats")
-            .RequireAuthorization()
-            .ProducesProblem(401);
+            .ProducesProblem(401)
+            .RequireAuthorization();
 
         endpoints.MapPost(String.Empty, Create)
             .WithSummary("Создать новый чат")
@@ -88,15 +89,10 @@ public static class ChatEndPoints {
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> Get(ClaimsPrincipal claimsPrincipal, Guid id, IChatsRepository repository, IChatService chatService) {
+    private static async Task<IResult> Get(ClaimsPrincipal claimsPrincipal, Guid id, IChatService chatService) {
         var user = claimsPrincipal.ToCurrentUser();
-        var chat = await repository.GetAsync(id);
-        if (chat == null) {
-            return Results.NotFound("Chat not found");
-        }
-
-        var chatWithMessages = await chatService.GetChatMessagesAsync(chat.Id, user.userId);
-        return Results.Ok(chatWithMessages);
+        var messages = await chatService.GetChatMessagesAsync(id, user.userId);
+        return Results.Ok(messages);
     }
 
     private static async Task<IResult> Delete(ClaimsPrincipal claimsPrincipal, Guid id, IChatService chatService) {

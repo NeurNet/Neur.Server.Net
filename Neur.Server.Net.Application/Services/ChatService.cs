@@ -50,7 +50,7 @@ public class ChatService : IChatService {
     }
 
     public async Task DeleteChatAsync(Guid chatId, Guid userId, CancellationToken token = default) {
-        var chat = await _chatsRepository.GetAsync(chatId, token);
+        var chat = await _chatsRepository.GetAsync(chatId, false, token);
         if (chat == null) {
             throw new NotFoundException("Chat not found");
         }
@@ -58,7 +58,7 @@ public class ChatService : IChatService {
     }
 
     public async Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, Guid userId, CancellationToken token = default) {
-        var chat = await _chatsRepository.GetAsync(chatId, token);
+        var chat = await _chatsRepository.GetAsync(chatId, false, token);
         if (chat == null) {
             throw new NotFoundException("Chat not found");
         }

@@ -1,7 +1,7 @@
 using Neur.Server.Net.Application.Services.DTO.ChatService;
 using Neur.Server.Net.Core.Entities;
 
-namespace Neur.Server.Net.Application.Interfaces;
+namespace Neur.Server.Net.Application.Interfaces.Services;
 
 public interface IChatService {
     Task<ChatEntity> CreateChatAsync(Guid userId, Guid modelId, CancellationToken token = default);
