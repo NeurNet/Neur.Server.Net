@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Records;
 using Neur.Server.Net.Core.Repositories;
@@ -43,5 +44,11 @@ public class UsersRepository : IUsersRepository {
             .AsNoTracking()
             .ToListAsync(token);
         return users;
+    }
+
+    public async Task UpdateRoleAsync(Guid id, UserRole role, CancellationToken token = default) {
+        await _db.Users
+            .Where(u => u.Id == id)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.Role, role), token);
     }
 }
