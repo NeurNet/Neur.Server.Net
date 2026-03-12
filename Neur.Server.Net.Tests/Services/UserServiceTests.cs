@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
+using Neur.Server.Net.Application.Exceptions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Interfaces.Clients;
 using Neur.Server.Net.Application.Services;
@@ -73,7 +74,7 @@ public class UserServiceTests {
 
         var act = () => _userService.Login(userId, password);
 
-        await act.Should().ThrowAsync<Neur.Server.Net.Application.Exceptions.NotAuthorizedException>();
+        await act.Should().ThrowAsync<NotAuthorizedException>();
     }
 
     [Fact]
