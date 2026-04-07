@@ -14,7 +14,8 @@ public static class RequestEndPoints {
             .RequireAuthorization("TeacherOrAdmin");
 
         endpoints.MapGet(String.Empty, GetAll)
-            .WithSummary("Получить список всех запросов пользователей");
+            .WithSummary("Получить список всех запросов пользователей")
+            .Produces<GenerationRequestResponse>(200);
         
         return endpoints;
     }
@@ -23,8 +24,13 @@ public static class RequestEndPoints {
         var user = claims.ToCurrentUser();
         var requests = await generationRequestService.GetAllGenerationRequests(user.userId);
         return Results.Ok(requests.Select(x =>
-            new GenerationRequestResponse(x.Id, x.ModelId, x.Model.ModelName, x.TokenCost, x.Status, x.CreatedAt,
-                x.StartedAt, x.FinishedAt))
+            new GenerationRequestResponse(
+                x.Id, x.ModelId, x.Model.ModelName, x.TokenCost, x.Status, x.CreatedAt,
+                x.StartedAt, x.FinishedAt, 
+                new GenerationRequestUserResponse(x.User.Id, x.User.Username, x.User.Name, x.User.Surname),
+                x.ResponseMessage != null ? new GenerationRequestMessageResponse(x.ResponseMessageId!.Value, x.ResponseMessage.Role, x.ResponseMessage.Content) : null
+                )
+            )
         );
     }
 }

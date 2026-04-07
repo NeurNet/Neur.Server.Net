@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,12 +36,12 @@ public class GenerationService : BackgroundService, IGenerationService {
         return request != null;
     }
 
-    public async IAsyncEnumerable<string> StreamGeneration(Guid modelId, Guid userId, string context, CancellationToken ctsToken) {
+    public async IAsyncEnumerable<string> StreamGeneration(Guid modelId, Guid userId, Guid messageId, string prompt, CancellationToken ctsToken) {
         if (await HasPendingRequestsAsync(userId)) {
             throw new QueueException("User is already has pending requests");
         }
         
-        var generationRequest = new GenerationRequestEntity(userId, modelId, 1, context, DateTime.UtcNow);
+        var generationRequest = new GenerationRequestEntity(userId, modelId, 1, messageId, DateTime.UtcNow);
         
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -48,12 +49,13 @@ public class GenerationService : BackgroundService, IGenerationService {
         await dbContext.GenerationRequests.AddAsync(generationRequest, ctsToken);
         await dbContext.SaveChangesAsync(ctsToken);
         
-        await _generationQueue.EnqueueAsync(generationRequest.Id);
+        await _generationQueue.EnqueueAsync(generationRequest.Id, prompt);
         var stream = await _generationQueue.WaitForResultAsync(generationRequest.Id, ctsToken);
         
         await foreach (var chunk in _ollamaClient.DeserializeStream(stream, ctsToken)) {
             yield return chunk;
         }
+        
     }
 
     protected override async Task ExecuteAsync(CancellationToken ctsToken) {
@@ -85,8 +87,9 @@ public class GenerationService : BackgroundService, IGenerationService {
             .Include(x => x.User)
             .FirstAsync(cancellationToken: ctsToken);
 
-        if (requestEntity == null) {
-            throw new NotFoundException("Request not found");
+        var prompt = _generationQueue.GetContext(requestId);
+        if (requestEntity == null ||  prompt == null) {
+            throw new NotFoundException();
         }
         
         requestEntity.StartedAt = DateTime.UtcNow;
@@ -96,7 +99,7 @@ public class GenerationService : BackgroundService, IGenerationService {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(ctsToken);
         
         try {
-            var ollamaRequest = new OllamaRequest(requestEntity.Model.ModelName, requestEntity.Prompt);
+            var ollamaRequest = new OllamaRequest(requestEntity.Model.ModelName, prompt);
             var stream = await _ollamaClient.GenerateStreamAsync(ollamaRequest, ctsToken);
             
             _generationQueue.CompleteRequest(requestId, stream);

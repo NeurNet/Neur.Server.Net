@@ -1,3 +1,4 @@
+using System.Text;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Extensions;
 using Neur.Server.Net.Application.Interfaces;
@@ -49,7 +50,7 @@ public class ChatService : IChatService {
         return chat;
     }
 
-    public async Task DeleteChatAsync(Guid chatId, Guid userId, CancellationToken token = default) {
+    public async Task DeleteChatAsync(Guid chatId, CancellationToken token = default) {
         var chat = await _chatsRepository.GetAsync(chatId, false, token);
         if (chat == null) {
             throw new NotFoundException("Chat not found");
@@ -57,7 +58,7 @@ public class ChatService : IChatService {
         await _chatsRepository.DeleteAsync(chatId, token);
     }
 
-    public async Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, Guid userId, CancellationToken token = default) {
+    public async Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, CancellationToken token = default) {
         var chat = await _chatsRepository.GetAsync(chatId, false, token);
         if (chat == null) {
             throw new NotFoundException("Chat not found");
@@ -75,25 +76,28 @@ public class ChatService : IChatService {
         return await _chatsRepository.GetAllUserChatsAsync(userId, token);
     }
     
-    public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt, CancellationToken token) {
-        var user = await _usersRepository.GetByIdAsync(userId, true, token: token);
-        var chat = await _chatsRepository.GetWithModelAsync(chatId, tracking: true, token: token);
+    public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, string prompt, CancellationToken token) {
+        var chat = await _chatsRepository.GetWithUserAsync(chatId, tracking: true, token: token);
         
-        if (user == null || chat == null) {
+        if (chat == null) {
             throw new NotFoundException();
         }
+
+        var user = chat.User;
         if (user.Tokens <= 0) {
             throw new BillingException("Not enough tokens");
         }
-        
-        await _messageService.SaveMessageAsync(chat, MessageRole.User, prompt, token);
-        var context = await ReadContextAsync(chatId, prompt, chat.Model.Context, token);
-        var modelResponse = string.Empty;
-        await foreach (var chunk in _generationService.StreamGeneration(chat.ModelId, userId, context, token)) {
-            modelResponse += chunk;
+
+        var promptContext = await ReadContextAsync(chatId, prompt, "", token);
+        var messageId = await _messageService.SaveMessageAsync(chat, MessageRole.User, prompt, token);
+
+        var modelResponse = new StringBuilder();
+        await foreach (var chunk in _generationService.StreamGeneration(chat.ModelId, chat.UserId, messageId, promptContext, token)) {
+            modelResponse.Append(chunk);
             yield return chunk;
         }
+        
         chat.UpdatedAt = DateTime.UtcNow;
-        await _messageService.SaveMessageAsync(chat, MessageRole.Assistant, modelResponse, token);
+        await _messageService.SaveMessageAsync(chat, MessageRole.Assistant, modelResponse.ToString(), token);
     }
 }

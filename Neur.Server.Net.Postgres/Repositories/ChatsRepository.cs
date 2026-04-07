@@ -50,10 +50,10 @@ public class ChatsRepository : IChatsRepository {
                 .FirstOrDefaultAsync(token);
     }
     
-    public async Task<ChatEntity?> GetWithUserAsync(Guid id, CancellationToken token = default) {
+    public async Task<ChatEntity?> GetWithUserAsync(Guid id, bool tracking = false, CancellationToken token = default) {
+        var query = tracking ? _db.Chats : _db.Chats.AsNoTracking();
         return 
-            await _db.Chats
-                .AsNoTracking()
+            await query
                 .Where(x => x.Id == id)
                 .Include(x => x.User)
                 .FirstOrDefaultAsync(token);

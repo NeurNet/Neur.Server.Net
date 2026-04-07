@@ -18,6 +18,15 @@ public class GenerationRequestConfiguration : IEntityTypeConfiguration<Generatio
             .HasOne(x => x.User)
             .WithMany()
             .HasForeignKey(x => x.UserId);
+        builder
+            .HasOne(x => x.PromptMessage)
+            .WithMany()
+            .HasForeignKey(x => x.PromptMessageId);
+        builder
+            .HasOne(x => x.ResponseMessage)
+            .WithMany()
+            .HasForeignKey(x => x.ResponseMessageId)
+            .IsRequired(false);
         builder.HasIndex(x => x.CreatedAt);
         builder.Property(x => x.StartedAt);
         builder.Property(x => x.FinishedAt);
