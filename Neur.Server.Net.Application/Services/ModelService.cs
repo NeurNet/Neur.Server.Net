@@ -14,15 +14,18 @@ public class ModelService : IModelService {
     private readonly ApplicationDbContext _context;
     private readonly IModelsRepository _modelsRepository;
     private readonly IUsersRepository _usersRepository;
-    
-    public ModelService(ApplicationDbContext context, IModelsRepository modelsRepository,  IUsersRepository usersRepository) {
+    private readonly IUnitOfWork _unitOfWork;
+
+    public ModelService(ApplicationDbContext context, IModelsRepository modelsRepository, IUsersRepository usersRepository, IUnitOfWork unitOfWork) {
         _context = context;
         _modelsRepository = modelsRepository;
         _usersRepository = usersRepository;
+        _unitOfWork = unitOfWork;
     }
     
     public async Task<ModelEntity> CreateAsync(ModelEntity model, CancellationToken token = default) {
         await _modelsRepository.AddAsync(model,  token);
+        await _unitOfWork.SaveChangesAsync(token);
         var savedModel = await _modelsRepository.GetAsync(model.Id,  token);
         
         if (savedModel != null) {
@@ -69,7 +72,7 @@ public class ModelService : IModelService {
         existingModel.Status = model.Status;
         existingModel.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(token);
+        await _unitOfWork.SaveChangesAsync(token);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken token = default) {

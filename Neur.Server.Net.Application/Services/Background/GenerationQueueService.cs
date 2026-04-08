@@ -1,25 +1,26 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Neur.Server.Net.Application.Exeptions;
+using Neur.Server.Net.Core.Entities;
 
 namespace Neur.Server.Net.Application.Services.Background;
 
 public class GenerationQueueService {
-    private readonly Channel<Guid> _queue;
+    private readonly Channel<GenerationRequestEntity> _queue;
     private readonly ConcurrentDictionary<Guid, TaskCompletionSource<Stream>> _pendingTasks;
     private readonly ConcurrentDictionary<Guid, string> _contexts;
 
     public GenerationQueueService() {
-        _queue = Channel.CreateUnbounded<Guid>(new UnboundedChannelOptions() { SingleReader = true, SingleWriter = false });
+        _queue = Channel.CreateUnbounded<GenerationRequestEntity>(new UnboundedChannelOptions() { SingleReader = true, SingleWriter = false });
         _pendingTasks = new ConcurrentDictionary<Guid, TaskCompletionSource<Stream>>();
         _contexts = new ConcurrentDictionary<Guid, string>();
     }
 
-    public async Task EnqueueAsync(Guid requestId, string context) {
-        _contexts[requestId] = context;
-        _pendingTasks.TryAdd(requestId, new TaskCompletionSource<Stream>());
-        await _queue.Writer.WriteAsync(requestId);
-        Console.WriteLine($"Добавлен запрос в очередь: {requestId}");
+    public async Task EnqueueAsync(GenerationRequestEntity request, string context) {
+        _contexts[request.Id] = context;
+        _pendingTasks.TryAdd(request.Id, new TaskCompletionSource<Stream>());
+        await _queue.Writer.WriteAsync(request);
+        Console.WriteLine($"Добавлен запрос в очередь: {request.Id}");
     }
 
     public string? GetContext(Guid requestId) {
@@ -35,7 +36,7 @@ public class GenerationQueueService {
         throw new NotFoundException();
     }
 
-    public ChannelReader<Guid> GetEnqueueReader() => _queue.Reader;
+    public ChannelReader<GenerationRequestEntity> GetEnqueueReader() => _queue.Reader;
 
     public void CompleteRequest(Guid requestId, Stream result) {
         Console.WriteLine("УСПЕШНОЕ ЗАВЕРШЕНИЕ");

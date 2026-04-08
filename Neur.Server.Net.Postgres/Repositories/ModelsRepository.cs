@@ -15,7 +15,6 @@ public class ModelsRepository : IModelsRepository {
 
     public async Task AddAsync(ModelEntity model, CancellationToken token = default) {
         await _db.AddAsync(model, token);
-        await _db.SaveChangesAsync(token);
     }
 
     public async Task DeleteAsync(ModelEntity model, CancellationToken token = default) {

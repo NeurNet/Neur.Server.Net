@@ -1,11 +1,10 @@
+using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 
 namespace Neur.Server.Net.Core.Repositories;
 
 public interface IGenerationRequestsRepository {
-    Task<Guid> Add(GenerationRequestEntity entity);
-    
-    Task Update(GenerationRequestEntity entity);
-    Task<List<GenerationRequestEntity>> GetAll();
-    Task<GenerationRequestEntity?> Get(Guid id);
+    Task<Guid> AddAsync(GenerationRequestEntity entity, CancellationToken token);
+    Task<List<GenerationRequestEntity>> GetAllByRoleAsync(CancellationToken token, UserRole role);
+    Task<GenerationRequestEntity?> GetAsync(Guid id, CancellationToken token);
 }

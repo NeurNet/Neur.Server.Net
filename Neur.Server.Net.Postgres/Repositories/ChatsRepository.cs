@@ -15,7 +15,6 @@ public class ChatsRepository : IChatsRepository {
     public async Task<Guid> AddAsync(ChatEntity entity, CancellationToken token = default) {
         try {
             await _db.Chats.AddAsync(entity);
-            await _db.SaveChangesAsync(token);
             return entity.Id;
         }
         catch (DbUpdateException ex) {
@@ -38,6 +37,7 @@ public class ChatsRepository : IChatsRepository {
             await query
                 .Where(x => x.Id == id)
                 .Include(x => x.Model)
+                .Include(x => x.User)
                 .FirstOrDefaultAsync(token);
     }
     
@@ -71,7 +71,6 @@ public class ChatsRepository : IChatsRepository {
         var chat = await _db.Chats.Where(x => x.Id == id).FirstOrDefaultAsync(token);
         if (chat != null) {
             _db.Chats.Remove(chat);
-            await _db.SaveChangesAsync(token);
         }
         else {
             throw new NullReferenceException();

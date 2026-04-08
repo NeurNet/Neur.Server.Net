@@ -22,7 +22,7 @@ public static class RequestEndPoints {
 
     private static async Task<IResult> GetAll(ClaimsPrincipal claims, GenerationRequestService generationRequestService) {
         var user = claims.ToCurrentUser();
-        var requests = await generationRequestService.GetAllGenerationRequests(user.userId);
+        var requests = await generationRequestService.GetAllGenerationRequests(user.userId, CancellationToken.None);
         return Results.Ok(requests.Select(x =>
             new GenerationRequestResponse(
                 x.Id, x.ModelId, x.Model.ModelName, x.TokenCost, x.Status, x.CreatedAt,

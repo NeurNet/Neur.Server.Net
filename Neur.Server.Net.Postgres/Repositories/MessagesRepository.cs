@@ -14,7 +14,6 @@ public class MessagesRepository : IMessagesRepository {
     
     public async Task AddAsync(MessageEntity message, CancellationToken token = default) {
         await _db.Messages.AddAsync(message, token);
-        await _db.SaveChangesAsync(token);
     }
 
     public async Task<List<MessageEntity>> GetChatMessagesAsync(Guid chatId, CancellationToken token = default) {

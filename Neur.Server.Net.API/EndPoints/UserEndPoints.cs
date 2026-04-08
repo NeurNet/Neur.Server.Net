@@ -45,9 +45,9 @@ public static class UserEndPoints {
         return endpoints;
     }
     
-    private static async Task<IResult> Login(UserLoginRequest req, IUserService userService, HttpResponse response, IOptions<JwtOptions> _jwtOptions) {
+    private static async Task<IResult> Login(UserLoginRequest req, IUserService userService, HttpResponse response, HttpContext context, IOptions<JwtOptions> _jwtOptions) {
         var jwtOptions = _jwtOptions.Value;
-        var token = await userService.Login(req.username, req.password);
+        var token = await userService.Login(req.username, req.password, context.RequestAborted);
         response.Cookies.Append("auth_token", token, new CookieOptions {
             HttpOnly = true,
             SameSite = SameSiteMode.Strict,

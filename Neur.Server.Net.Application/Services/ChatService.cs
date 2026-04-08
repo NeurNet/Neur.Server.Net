@@ -3,6 +3,7 @@ using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Extensions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Interfaces.Services;
+using Neur.Server.Net.Application.Services.Background;
 using Neur.Server.Net.Application.Services.DTO.ChatService;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
@@ -12,23 +13,29 @@ using Neur.Server.Net.Infrastructure;
 namespace Neur.Server.Net.Application.Services;
 
 public class ChatService : IChatService {
+    private readonly GenerationService _generationService;
     private readonly IUsersRepository _usersRepository;
     private readonly IModelsRepository _modelsRepository;
-    private readonly IGenerationService _generationService;
-    private readonly IMessageService _messageService;
     private readonly IChatsRepository _chatsRepository;
+    private readonly IMessagesRepository _messagesRepository;
+    private readonly IGenerationRequestsRepository _requestsRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public ChatService(IGenerationService generationService,
-        IChatsRepository chatsRepository, IMessageService messageService,
-        IUsersRepository usersRepository, IModelsRepository modelsRepository) {
+    public ChatService(GenerationService generationService,
+        IChatsRepository chatsRepository, IMessagesRepository messagesRepository,
+        IUsersRepository usersRepository, IModelsRepository modelsRepository,
+        IGenerationRequestsRepository requestsRepository,
+        IUnitOfWork unitOfWork) {
         _usersRepository = usersRepository;
         _modelsRepository = modelsRepository;
+        _messagesRepository = messagesRepository;
         _generationService = generationService;
+        _requestsRepository = requestsRepository;
         _chatsRepository = chatsRepository;
-        _messageService = messageService;
+        _unitOfWork = unitOfWork;
     }
     private async Task<string> ReadContextAsync(Guid chatId, string currentMessage, string baseContext, CancellationToken token = default) {
-        List<MessageEntity> messages = await _messageService.GetChatMessagesAsync(chatId, token);
+        List<MessageEntity> messages = await _messagesRepository.GetChatMessagesAsync(chatId, token);
         var contextManager = new ContextManager(1000);
         
         contextManager.AddBaseContext(baseContext);
@@ -47,6 +54,7 @@ public class ChatService : IChatService {
             createdAt:  DateTime.UtcNow
         );
         await _chatsRepository.AddAsync(chat, token);
+        await _unitOfWork.SaveChangesAsync(token);
         return chat;
     }
 
@@ -56,6 +64,7 @@ public class ChatService : IChatService {
             throw new NotFoundException("Chat not found");
         }
         await _chatsRepository.DeleteAsync(chatId, token);
+        await _unitOfWork.SaveChangesAsync(token);
     }
 
     public async Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, CancellationToken token = default) {
@@ -64,7 +73,7 @@ public class ChatService : IChatService {
             throw new NotFoundException("Chat not found");
         }
         
-        var messages = await _messageService.GetChatMessagesAsync(chatId, token);
+        var messages = await _messagesRepository.GetChatMessagesAsync(chatId, token);
         return chat.ToResponse(messages);
     }
 
@@ -77,7 +86,7 @@ public class ChatService : IChatService {
     }
     
     public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, string prompt, CancellationToken token) {
-        var chat = await _chatsRepository.GetWithUserAsync(chatId, tracking: true, token: token);
+        var chat = await _chatsRepository.GetAsync(chatId, tracking: true, token: token);
         
         if (chat == null) {
             throw new NotFoundException();
@@ -88,16 +97,43 @@ public class ChatService : IChatService {
             throw new BillingException("Not enough tokens");
         }
 
-        var promptContext = await ReadContextAsync(chatId, prompt, "", token);
-        var messageId = await _messageService.SaveMessageAsync(chat, MessageRole.User, prompt, token);
-
-        var modelResponse = new StringBuilder();
-        await foreach (var chunk in _generationService.StreamGeneration(chat.ModelId, chat.UserId, messageId, promptContext, token)) {
-            modelResponse.Append(chunk);
-            yield return chunk;
-        }
+        var promptContext = await ReadContextAsync(chatId, prompt, chat.Model.Context, token);
+        var messageRequest = new MessageEntity(chatId, MessageRole.User, prompt);
+        var generationRequest = new GenerationRequestEntity(user.Id, chat.ModelId, 1, messageRequest.Id);
         
-        chat.UpdatedAt = DateTime.UtcNow;
-        await _messageService.SaveMessageAsync(chat, MessageRole.Assistant, modelResponse.ToString(), token);
+        // Первая операция
+        await _messagesRepository.AddAsync(messageRequest, token);
+        await _requestsRepository.AddAsync(generationRequest, token);
+        await _unitOfWork.SaveChangesAsync(token);
+        
+        bool completed = false;
+        var modelResponse = new StringBuilder();
+
+        // Вторая операция
+        var onResponse = async () => {
+            generationRequest.MarkInProcess();
+            await _unitOfWork.SaveChangesAsync(token);
+        };
+        
+        try {
+            await foreach (var chunk in _generationService.StreamGeneration(generationRequest, promptContext, onResponse, token)) {
+                modelResponse.Append(chunk);
+                yield return chunk;
+            }
+            completed = true;
+        }
+        finally {
+            if (completed) {
+                var messageResponse = new MessageEntity(chatId, MessageRole.Assistant, modelResponse.ToString());
+                await _messagesRepository.AddAsync(messageResponse, token);
+                generationRequest.MarkSuccessFinished(messageResponse.Id);
+                chat.UpdatedAt = DateTime.UtcNow;
+                user.Tokens--;
+            }
+            else {
+                generationRequest.MarkFailed();
+            }
+            await _unitOfWork.SaveChangesAsync(token);
+        }
     }
 }
