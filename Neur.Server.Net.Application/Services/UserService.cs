@@ -15,11 +15,13 @@ public class UserService : IUserService {
     private readonly IUsersRepository _usersRepository;
     private readonly ICollegeClient _collegeClient;
     private readonly IJwtProvider _jwtProvider;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public UserService(IUsersRepository usersRepository, ICollegeClient collegeClient, IJwtProvider jwtProvider) {
+    public UserService(IUsersRepository usersRepository, ICollegeClient collegeClient, IJwtProvider jwtProvider, IUnitOfWork unitOfWork) {
         _usersRepository = usersRepository;
         _collegeClient = collegeClient;
         _jwtProvider = jwtProvider;
+        _unitOfWork = unitOfWork;
     }
     
     private UserRole DeterminateRole(string role) {
@@ -33,8 +35,8 @@ public class UserService : IUserService {
         }
         throw new Exception("UserRole doesn't exist");
     }
-    public async Task<string> Login(string username, string password) {
-        var collegeUser = await _collegeClient.AuthenticateAsync(username, password);
+    public async Task<string> Login(string username, string password, CancellationToken cancellationToken = default) {
+        var collegeUser = await _collegeClient.AuthenticateAsync(username, password, cancellationToken);
         if (collegeUser == null) {
             throw new NotAuthorizedException();
         }
@@ -56,6 +58,7 @@ public class UserService : IUserService {
                 tokens: 10
             );
             await _usersRepository.AddAsync(newUser);
+            await _unitOfWork.SaveChangesAsync();
             var token = _jwtProvider.GenerateToken(newUser);
             return token;
         }

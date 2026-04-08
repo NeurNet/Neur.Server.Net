@@ -12,10 +12,10 @@ public class MessageEntity : Entity {
 
     private MessageEntity() {}
 
-    public MessageEntity(Guid chatId, DateTime createdAt, MessageRole role, string content) {
+    public MessageEntity(Guid chatId, MessageRole role, string content) {
         Id = Guid.NewGuid();
         ChatId = chatId;
-        CreatedAt = createdAt;
+        CreatedAt = DateTime.UtcNow;
         Role = role;
         Content = content;
     }

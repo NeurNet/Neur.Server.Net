@@ -26,28 +26,34 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCorsPolicy(builder.Configuration.GetSection("Services").Get<ServiceOptions>());
 builder.Services.AddDatabaseConfiguration();
 
-builder.Services.AddSingleton<IGenerationService, GenerationService>();
+builder.Services.AddSingleton<GenerationService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<GenerationService>());
 builder.Services.AddSingleton<GenerationQueueService>();
-builder.Services.AddHostedService<GenerationService>();
 builder.Services.AddSwaggerApi();
-builder.Services.AddHttpClient();
-
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(nameof(JwtOptions)));
 builder.Services.Configure<CollegeClientOptions>(builder.Configuration.GetSection("Services").GetSection(
     nameof(CollegeClient)));
 builder.Services.Configure<OllamaClientOptions>(builder.Configuration.GetSection("Services").GetSection(nameof(OllamaClient)));
 
+var collegeClientOptions = builder.Configuration.GetSection("Services").GetSection(nameof(CollegeClient))
+    .Get<CollegeClientOptions>()!;
+
+builder.Services.AddHttpClient<ICollegeClient, CollegeClient>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(collegeClientOptions.TimeoutSeconds);
+});
+
 builder.Services.AddSingleton<IOllamaClient, OllamaClient>();
-builder.Services.AddSingleton<ICollegeClient, CollegeClient>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IModelService, ModelService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<GenerationRequestService>();
-builder.Services.AddScoped<IMessageService, MessageService>();
 
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddApiAuthentication(builder.Configuration.GetSection(nameof(JwtOptions)).Get<JwtOptions>());
 

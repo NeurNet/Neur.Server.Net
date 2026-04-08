@@ -25,15 +25,15 @@ public class CollegeClient : ICollegeClient {
         _options = options.Value;
     }
     
-    private async Task<AuthUserResponse?> SendAuthRequest(string username, string password) {
+    private async Task<AuthUserResponse?> SendAuthRequest(string username, string password, CancellationToken cancellationToken) {
         var requestBody = JsonSerializer.Serialize(new AuthRequest(
             username: username,
             password: password
         ));
         var stringContent = new StringContent(requestBody, Encoding.UTF8, "application/json");
-        var response = await _httpClient.PostAsync($"{_options.url}/api/v1/users/signin", stringContent);
+        var response = await _httpClient.PostAsync($"{_options.url}/api/v1/users/signin", stringContent, cancellationToken);
         if (response.IsSuccessStatusCode) {
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
             return JsonSerializer.Deserialize<AuthResponse>(content).user;
         }
         
@@ -46,8 +46,8 @@ public class CollegeClient : ICollegeClient {
     /// <param name="username">The user's login name</param>
     /// <param name="password">The user's password</param>
     /// <returns>User data if authentication success</returns>
-    public async Task<AuthUserResponse?> AuthenticateAsync(string username, string password) {
-        var userResponse = await SendAuthRequest(username, password);
+    public async Task<AuthUserResponse?> AuthenticateAsync(string username, string password, CancellationToken cancellationToken = default) {
+        var userResponse = await SendAuthRequest(username, password, cancellationToken);
         return userResponse;
     }
 }

@@ -71,7 +71,7 @@ public static class ChatEndPoints {
         context.Response.Headers["Cache-Control"] = "no-cache";
         context.Response.Headers["Connection"] = "keep-alive";
 
-        await foreach (var chunk in chatService.ProcessPromptAsync(id, user.userId, request.prompt, ctsToken.Token)) {
+        await foreach (var chunk in chatService.ProcessPromptAsync(id, request.prompt, ctsToken.Token)) {
             await context.Response.WriteAsync($"data: {chunk}\n\n");
             await context.Response.Body.FlushAsync();
         }
@@ -90,14 +90,12 @@ public static class ChatEndPoints {
     }
 
     private static async Task<IResult> Get(ClaimsPrincipal claimsPrincipal, Guid id, IChatService chatService) {
-        var user = claimsPrincipal.ToCurrentUser();
-        var messages = await chatService.GetChatMessagesAsync(id, user.userId);
+        var messages = await chatService.GetChatMessagesAsync(id);
         return Results.Ok(messages);
     }
 
     private static async Task<IResult> Delete(ClaimsPrincipal claimsPrincipal, Guid id, IChatService chatService) {
-        var user = claimsPrincipal.ToCurrentUser();
-        await chatService.DeleteChatAsync(id, user.userId);
+        await chatService.DeleteChatAsync(id);
         return Results.Ok(id);
     }
 }

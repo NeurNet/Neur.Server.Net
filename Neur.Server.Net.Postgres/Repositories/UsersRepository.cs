@@ -15,7 +15,6 @@ public class UsersRepository : IUsersRepository {
     
     public async Task AddAsync(UserEntity user, CancellationToken token = default) {
         await _db.AddAsync(user,  token);
-        await _db.SaveChangesAsync(token);
     }
 
     public async Task<UserEntity> GetByLdapIdAsync(string ldapId, CancellationToken token = default) {

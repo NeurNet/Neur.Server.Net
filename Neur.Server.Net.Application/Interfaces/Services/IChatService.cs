@@ -5,8 +5,8 @@ namespace Neur.Server.Net.Application.Interfaces.Services;
 
 public interface IChatService {
     Task<ChatEntity> CreateChatAsync(Guid userId, Guid modelId, CancellationToken token = default);
-    Task DeleteChatAsync(Guid chatId, Guid userId, CancellationToken token = default);
-    Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, Guid userId, CancellationToken token = default);
+    Task DeleteChatAsync(Guid chatId, CancellationToken token = default);
+    Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, CancellationToken token = default);
     Task<List<ChatEntity>> GetAllUserChatsAsync(Guid userId,  CancellationToken token = default);
-    IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, Guid userId, string prompt, CancellationToken token);
+    IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, string prompt, CancellationToken token);
 }
