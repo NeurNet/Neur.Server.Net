@@ -123,6 +123,7 @@ public class ChatService : IChatService {
             completed = true;
         }
         finally {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             if (completed) {
                 var messageResponse = new MessageEntity(chatId, MessageRole.Assistant, modelResponse.ToString());
                 await _messagesRepository.AddAsync(messageResponse, token);
@@ -133,7 +134,7 @@ public class ChatService : IChatService {
             else {
                 generationRequest.MarkFailed();
             }
-            await _unitOfWork.SaveChangesAsync(token);
+            await _unitOfWork.SaveChangesAsync(cts.Token);
         }
     }
 }
