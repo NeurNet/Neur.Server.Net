@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.Application.Clients.Options;
 using Neur.Server.Net.Application.Interfaces.Clients;
+using Neur.Server.Net.Application.Interfaces.Clients.Contracts.OllamaClient;
 using Neur.Server.Net.Infrastructure.Clients.Contracts.OllamaClient;
 using Neur.Server.Net.Infrastructure.Interfaces;
 
@@ -26,13 +27,13 @@ public class OllamaClient : IOllamaClient {
     }
     
     /// <summary>
-    /// The method of sending a generation request to Ollama
+    /// The method of sending a generation generationRequest to Ollama
     /// </summary>
-    /// <param name="request">Request object</param>
+    /// <param name="generationRequest">Request object</param>
     /// <param name="cts">Cancellation token</param>
     /// <returns></returns>
-    public async Task<Stream> GenerateStreamAsync(OllamaRequest request, CancellationToken cts) {
-        var requestBody = JsonSerializer.Serialize(request);
+    public async Task<Stream> GenerateStreamAsync(OllamaGenerationRequest generationRequest, CancellationToken cts) {
+        var requestBody = JsonSerializer.Serialize(generationRequest);
         var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
         var req = new HttpRequestMessage(HttpMethod.Post, $"{_options.url}/api/generate") {
@@ -50,10 +51,19 @@ public class OllamaClient : IOllamaClient {
         while (!reader.EndOfStream && !token.IsCancellationRequested) {
             var line = await reader.ReadLineAsync();
             if (line == null) continue;
-            var content = JsonSerializer.Deserialize<OllamaResponse>(line);
+            var content = JsonSerializer.Deserialize<OllamaGenerationResponse>(line);
             if (content == null) continue;
             
             yield return content.response;
         }
+    }
+
+    public async Task<OllamaModelsResponse?> GetOllamaModels(CancellationToken token) {
+        var response = await _httpClient.GetAsync($"{_options.url}/api/tags", token);
+        response.EnsureSuccessStatusCode();
+
+        var responseBody = await response.Content.ReadAsStringAsync(token);
+        var result = JsonSerializer.Deserialize<OllamaModelsResponse>(responseBody);
+        return result;
     }
 }

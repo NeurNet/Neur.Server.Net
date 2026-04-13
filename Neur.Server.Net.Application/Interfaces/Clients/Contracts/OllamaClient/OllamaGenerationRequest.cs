@@ -1,6 +1,6 @@
 namespace Neur.Server.Net.Infrastructure.Clients.Contracts.OllamaClient;
 
-public record OllamaRequest(
+public record OllamaGenerationRequest(
     string model,
     string prompt,
     bool stream = true

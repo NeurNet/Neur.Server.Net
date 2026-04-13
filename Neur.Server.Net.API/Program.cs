@@ -12,6 +12,7 @@ using Neur.Server.Net.Application.Services.Background;
 using Neur.Server.Net.Infrastructure;
 using Neur.Server.Net.Infrastructure.Clients;
 using Neur.Server.Net.Infrastructure.Interfaces;
+using Neur.Server.Net.Infrastructure.Services;
 using Neur.Server.Net.Postgres;
 using Neur.Server.Net.Postgres.Extensions;
 
@@ -44,6 +45,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IModelService, ModelService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IOllamaService, OllamaService>();
 builder.Services.AddScoped<GenerationRequestService>();
 
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();

@@ -56,7 +56,7 @@ public class GenerationService : BackgroundService {
         if (prompt == null) {
             throw new NotFoundException();
         }
-        var ollamaRequest = new OllamaRequest(request.Model.ModelName, prompt);
+        var ollamaRequest = new OllamaGenerationRequest(request.Model.ModelName, prompt);
         var stream = await _ollamaClient.GenerateStreamAsync(ollamaRequest, ctsToken);
         _generationQueue.CompleteRequest(request.Id, stream);
     }

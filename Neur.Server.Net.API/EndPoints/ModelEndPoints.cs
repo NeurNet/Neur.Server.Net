@@ -23,7 +23,6 @@ public static class ModelEndPoints {
         endpoints.MapGet(String.Empty, GetAll)
             .WithSummary("Получить список всех моделей")
             .Produces<List<GetModelResponse>>(200)
-            .Produces(401)
             .RequireAuthorization();
 
         endpoints.MapPost(String.Empty, Add)
