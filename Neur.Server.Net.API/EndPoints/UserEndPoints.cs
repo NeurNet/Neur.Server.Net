@@ -68,7 +68,7 @@ public static class UserEndPoints {
 
         var userRole = user.Role.ToString().ToLower();
         
-        return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, userRole, user.Tokens));
+        return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, user.Name, user.Surname, userRole, user.Tokens));
     }
 
     private static async Task<IEnumerable<UserResponse>> GetAll(IUserService userService) {

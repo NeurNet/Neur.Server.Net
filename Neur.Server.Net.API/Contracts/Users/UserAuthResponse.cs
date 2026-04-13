@@ -9,6 +9,8 @@ namespace Neur.Server.Net.API.Contracts.Users;
 public record UserAuthResponse(
     string id,
     string username,
+    string name,
+    string surname,
     string role,
     int tokens
 );
