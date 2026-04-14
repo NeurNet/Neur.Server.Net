@@ -104,6 +104,7 @@ public static class ModelEndPoints {
             id:  model.Id,
             name: model.Name,
             model: model.ModelName,
+            type: model.Type,
             version: model.Version,
             status: model.Status.ToString(),
             createdAt: model.CreatedAt,
