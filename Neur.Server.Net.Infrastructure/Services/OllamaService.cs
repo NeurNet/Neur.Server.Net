@@ -22,7 +22,7 @@ public class OllamaService : IOllamaService {
         var responseStream = await _client.LoadModelAsync(name, token);
         using var reader = new StreamReader(responseStream);
         
-        var ctsResponse = new CancellationTokenSource();
+        using var ctsResponse = new CancellationTokenSource();
         
         while (!reader.EndOfStream && !token.IsCancellationRequested) {
             ctsResponse.CancelAfter(TimeSpan.FromSeconds(30));

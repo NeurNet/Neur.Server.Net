@@ -20,9 +20,9 @@ public static class OllamaEndPoints {
             .Produces<List<OllamaModel>>(200);
 
         endpoints
-            .MapPost(String.Empty, LoadModel)
+            .MapPost("pull", LoadModel)
             .WithSummary("Загрузить модель Ollama на сервер")
-            .Produces<OllamaLoadModelResponse>(200, "text/event-stream");
+            .Produces<OllamaLoadModelResponse>(200, "application/x-ndjson");
         
         return endpoints;
     }
