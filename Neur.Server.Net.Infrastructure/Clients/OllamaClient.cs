@@ -58,12 +58,23 @@ public class OllamaClient : IOllamaClient {
         }
     }
 
-    public async Task<OllamaModelsResponse?> GetOllamaModels(CancellationToken token) {
+    public async Task<OllamaModelsResponse?> GetModelsAsync(CancellationToken token) {
         var response = await _httpClient.GetAsync($"{_options.url}/api/tags", token);
         response.EnsureSuccessStatusCode();
 
         var responseBody = await response.Content.ReadAsStringAsync(token);
         var result = JsonSerializer.Deserialize<OllamaModelsResponse>(responseBody);
         return result;
+    }
+
+    public async Task<Stream> LoadModelAsync(string name, CancellationToken token) {
+        var request = new OllamaLoadModelRequest(name, true);
+        var requestBody = JsonSerializer.Serialize(request);
+        var stringContent = new StringContent(requestBody, Encoding.UTF8, "application/json");
+        
+        var response = await _httpClient.PostAsync($"{_options.url}/api/pull", stringContent, token);
+        response.EnsureSuccessStatusCode();
+        
+        return await response.Content.ReadAsStreamAsync();
     }
 }

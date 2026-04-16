@@ -63,7 +63,6 @@ public static class ChatEndPoints {
     private static async Task Generate(Guid id, [FromBody] GenerateRequest request, 
         IChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context) {
         
-        var user = claimsPrincipal.ToCurrentUser();
         var ctsToken = new CancellationTokenSource();
         ctsToken.CancelAfter(TimeSpan.FromSeconds(80));
         

@@ -22,6 +22,9 @@ public class MiddlewareHandler {
     }
 
     private static Task HandleExceptionAsync(HttpContext context, Exception ex) {
+        if (context.Response.HasStarted)
+            return Task.CompletedTask;
+
         context.Response.ContentType = "application/json";
 
         if (ex is BaseException) {
