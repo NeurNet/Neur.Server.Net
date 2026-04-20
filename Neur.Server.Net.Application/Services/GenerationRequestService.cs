@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Neur.Server.Net.Application.Exceptions;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
@@ -15,13 +16,14 @@ public class GenerationRequestService {
         _requestsRepository = requestsRepository;
         _usersRepository = usersRepository;
     }
-    
-    public async Task<IEnumerable<GenerationRequestEntity>> GetAllGenerationRequests(Guid userId, CancellationToken cancellationToken) {
+
+    public async Task<(IEnumerable<GenerationRequestEntity>, int)> GetPartAsync(Guid userId, int page, int pageSize,  CancellationToken cancellationToken) {
         var user = await _usersRepository.GetByIdAsync(userId, token: cancellationToken);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        var requests = await _requestsRepository.GetAllByRoleAsync(cancellationToken, user.Role);
-        return requests;
+        var requests = await _requestsRepository.GetPartByRoleAsync(page, pageSize, user.Role, cancellationToken);
+        var totalCount = await _requestsRepository.GetCountByRoleAsync(user.Role, cancellationToken);
+        return (requests, totalCount);
     }
 }

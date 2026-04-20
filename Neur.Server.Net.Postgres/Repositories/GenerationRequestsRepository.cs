@@ -36,4 +36,23 @@ public class GenerationRequestsRepository : IGenerationRequestsRepository {
             .Include(x => x.ResponseMessage)
             .FirstOrDefaultAsync(token);
     }
+
+    public async Task<List<GenerationRequestEntity>> GetPartByRoleAsync(int page, int pageSize, UserRole role, CancellationToken token) {
+        return await _db.GenerationRequests
+            .OrderByDescending(x => x.CreatedAt)
+            .Include(x => x.User)
+            .Include(x => x.Model)
+            .Include(x => x.ResponseMessage)
+            .Where(x => x.User.Role <= role)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync(token);
+    }
+
+    public async Task<int> GetCountByRoleAsync(UserRole role, CancellationToken token) {
+        return await _db.GenerationRequests
+            .Include(x => x.User)
+            .Where(x => x.User.Role <= role)
+            .CountAsync(token);
+    }
 }
