@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Neur.Server.Net.API.Contracts.Chats;
 using Neur.Server.Net.API.Contracts.Messages;
@@ -43,7 +45,7 @@ public static class ChatEndPoints {
         endpoints.MapPost("/{id}/generate", Generate)
             .WithSummary("Сгенерировать ответ от нейросети")
             .Produces(404)
-            .Produces<string>(200, "text/event-stream");
+            .Produces<GenerateResponse>(200, "application/x-ndjson");
         
         endpoints.MapDelete("/{id}", Delete)
             .WithSummary("Удалить чат")
@@ -52,6 +54,10 @@ public static class ChatEndPoints {
         
         return endpoints;
     }
+    
+    private static readonly JsonSerializerOptions JsonOptions = new() {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
 
     private static async Task<IResult> Create(ClaimsPrincipal claimsPrincipal, CreateChatRequest request, IChatService chatService) {
         var user = claimsPrincipal.ToCurrentUser();
@@ -63,18 +69,21 @@ public static class ChatEndPoints {
     private static async Task Generate(Guid id, [FromBody] GenerateRequest request, 
         IChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context) {
         
-        var ctsToken = new CancellationTokenSource();
-        ctsToken.CancelAfter(TimeSpan.FromSeconds(80));
+        var cts = new CancellationTokenSource();
+        cts.CancelAfter(TimeSpan.FromSeconds(80));
         
-        context.Response.ContentType = "text/event-stream";
+        context.Response.ContentType = "application/x-ndjson";
         context.Response.Headers["Cache-Control"] = "no-cache";
         context.Response.Headers["Connection"] = "keep-alive";
 
-        await foreach (var chunk in chatService.ProcessPromptAsync(id, request.prompt, ctsToken.Token)) {
-            await context.Response.WriteAsync($"data: {chunk}\n\n");
+        await foreach (var chunk in chatService.ProcessPromptAsync(id, request.prompt, cts.Token)) {
+            var json = JsonSerializer.Serialize(new { data = chunk }, JsonOptions);
+            await context.Response.WriteAsync(json + "\n");
             await context.Response.Body.FlushAsync();
         }
 
+        var final = JsonSerializer.Serialize(new { data = "", completed = true }, JsonOptions);
+        await context.Response.WriteAsync(final + "\n");
         await context.Response.CompleteAsync();
     }
 
