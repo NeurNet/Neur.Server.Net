@@ -1,4 +1,5 @@
 using Neur.Server.Net.Core.Data;
+using Neur.Server.Net.Core.Entities;
 
 namespace Neur.Server.Net.API.Contracts.GenerationRequests;
 
@@ -15,7 +16,7 @@ public record GenerationRequestUserResponse(
     string surname
 );
 
-public record GenerationRequestResponse(
+public record GenerationRequestResponseItem(
     Guid id,
     Guid model_id,
     string model_name,
@@ -26,4 +27,9 @@ public record GenerationRequestResponse(
     DateTime? finished_at,
     GenerationRequestUserResponse user,
     GenerationRequestMessageResponse? message
+);
+
+public record GenerationRequestResponse(
+    IEnumerable<GenerationRequestResponseItem> items,
+    int total
 );
