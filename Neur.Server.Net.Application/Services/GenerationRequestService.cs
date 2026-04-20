@@ -23,7 +23,7 @@ public class GenerationRequestService {
             throw new NotFoundException("User not found");
         }
         var requests = await _requestsRepository.GetPartByRoleAsync(page, pageSize, user.Role, cancellationToken);
-        var totalCount = await _requestsRepository.GetCountAsync(cancellationToken);
+        var totalCount = await _requestsRepository.GetCountByRoleAsync(user.Role, cancellationToken);
         return (requests, totalCount);
     }
 }

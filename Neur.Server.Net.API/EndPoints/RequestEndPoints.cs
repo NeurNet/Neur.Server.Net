@@ -30,7 +30,7 @@ public static class RequestEndPoints {
         }
         
         var userInfo = claims.ToCurrentUser();
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromSeconds(30));
         var requests = await service.GetPartAsync(userInfo.userId, page, pageSize, cts.Token);
         return Results.Ok(requests.ToResponse());
