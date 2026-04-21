@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.API.Contracts.Users;
 using Neur.Server.Net.API.Extensions;
+using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Core.Entities;
@@ -32,7 +33,7 @@ public static class UserEndPoints {
             .WithDescription("Удаляет Cookie <b>'auth_token'</b>");
         endpoints.MapGet(string.Empty, GetAll)
             .WithSummary("Получить список всех пользователей")
-            .Produces<List<UserResponse>>()
+            .Produces<List<UserWithLastRequestResponse>>()
             .Produces(401)
             .RequireAuthorization("TeacherOrAdmin");
         endpoints.MapGet("/{id}", GetById)
@@ -65,22 +66,18 @@ public static class UserEndPoints {
     private static async Task<IResult> Auth(ClaimsPrincipal claimsPrincipal, IUsersRepository userRepository) {
         var cookie = claimsPrincipal.ToCurrentUser();
         var user = await userRepository.GetByIdAsync(cookie.userId);
-
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        
         var userRole = user.Role.ToString().ToLower();
         
         return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, user.Name, user.Surname, userRole, user.Tokens));
     }
 
-    private static async Task<IEnumerable<UserResponse>> GetAll(IUserService userService) {
-        var users = await userService.GetAllUsers();
-        return users.Select(x => new UserResponse(
-            x.Id,
-            x.Username,
-            x.Name,
-            x.Surname,
-            x.Role,
-            x.Tokens
-        ));
+    private static async Task<IResult> GetAll(IUserService userService, CancellationToken cancellationToken) {
+        var usersWithLastRequest = await userService.GetAllUsersWithLastRequest(cancellationToken);
+        return Results.Ok(usersWithLastRequest.ToResponse());
     }
 
     private static async Task<IResult> GetById(Guid id, IUsersRepository userRepository) {

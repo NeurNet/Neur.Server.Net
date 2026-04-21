@@ -13,12 +13,14 @@ namespace Neur.Server.Net.Application.Services;
 
 public class UserService : IUserService {
     private readonly IUsersRepository _usersRepository;
+    private readonly IGenerationRequestsRepository _requestsRepository;
     private readonly ICollegeClient _collegeClient;
     private readonly IJwtProvider _jwtProvider;
     private readonly IUnitOfWork _unitOfWork;
 
-    public UserService(IUsersRepository usersRepository, ICollegeClient collegeClient, IJwtProvider jwtProvider, IUnitOfWork unitOfWork) {
+    public UserService(IUsersRepository usersRepository, IGenerationRequestsRepository requestsRepository, ICollegeClient collegeClient, IJwtProvider jwtProvider, IUnitOfWork unitOfWork) {
         _usersRepository = usersRepository;
+        _requestsRepository = requestsRepository;
         _collegeClient = collegeClient;
         _jwtProvider = jwtProvider;
         _unitOfWork = unitOfWork;
@@ -64,9 +66,8 @@ public class UserService : IUserService {
         }
     }
 
-    public async Task<List<UserEntity>> GetAllUsers() {
-        var users = await _usersRepository.GetAllAsync();
-        return users;
+    public async Task<List<(UserEntity, DateTime?)>> GetAllUsersWithLastRequest(CancellationToken token = default) {
+        return await _usersRepository.GetAllWithLastRequestTimeAsync(token);
     }
 
     public async Task ChangeUserRole(Guid userId, UserRole role) {

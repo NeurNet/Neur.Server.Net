@@ -38,11 +38,22 @@ public class UsersRepository : IUsersRepository {
         return user;
     }
 
-    public async Task<List<UserEntity>> GetAllAsync(CancellationToken token = default) {
-        var  users = await _db.Users
-            .AsNoTracking()
+    public async Task<List<(UserEntity User, DateTime? LastRequestTime)>> GetAllWithLastRequestTimeAsync(CancellationToken token = default) {
+        var raw = await _db.Users
+            .GroupJoin(
+                _db.GenerationRequests,
+                u => u.Id,
+                r => r.UserId,
+                (u, r) => new {
+                    User = u,
+                    LastRequestTime = r.OrderByDescending(req => req.CreatedAt)
+                        .Select(req => (DateTime?)req.CreatedAt)
+                        .FirstOrDefault()
+                }
+            )
             .ToListAsync(token);
-        return users;
+
+        return raw.Select(u => (u.User, u.LastRequestTime)).ToList();
     }
 
     public async Task UpdateRoleAsync(Guid id, UserRole role, CancellationToken token = default) {
