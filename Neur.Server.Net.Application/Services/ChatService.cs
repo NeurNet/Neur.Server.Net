@@ -124,9 +124,10 @@ public class ChatService : IChatService {
         }
         finally {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            
             if (completed) {
                 var messageResponse = new MessageEntity(chatId, MessageRole.Assistant, modelResponse.ToString());
-                await _messagesRepository.AddAsync(messageResponse, token);
+                await _messagesRepository.AddAsync(messageResponse, cts.Token);
                 generationRequest.MarkSuccessFinished(messageResponse.Id);
                 chat.UpdatedAt = DateTime.UtcNow;
                 user.Tokens--;
