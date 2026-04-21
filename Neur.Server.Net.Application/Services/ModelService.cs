@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Interfaces.Services;
@@ -15,12 +16,14 @@ public class ModelService : IModelService {
     private readonly IModelsRepository _modelsRepository;
     private readonly IUsersRepository _usersRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<ModelService> _logger;
 
-    public ModelService(ApplicationDbContext context, IModelsRepository modelsRepository, IUsersRepository usersRepository, IUnitOfWork unitOfWork) {
+    public ModelService(ApplicationDbContext context, IModelsRepository modelsRepository, IUsersRepository usersRepository, IUnitOfWork unitOfWork, ILogger<ModelService> logger) {
         _context = context;
         _modelsRepository = modelsRepository;
         _usersRepository = usersRepository;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
     
     public async Task<ModelEntity> CreateAsync(ModelEntity model, CancellationToken token = default) {
@@ -29,6 +32,7 @@ public class ModelService : IModelService {
         var savedModel = await _modelsRepository.GetAsync(model.Id,  token);
         
         if (savedModel != null) {
+            _logger.LogInformation("Model {ModelId} created", savedModel.Id);
             return savedModel;
         }
 
@@ -73,6 +77,7 @@ public class ModelService : IModelService {
         existingModel.UpdatedAt = DateTime.UtcNow;
 
         await _unitOfWork.SaveChangesAsync(token);
+        _logger.LogInformation("Model {ModelId} updated", model.Id);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken token = default) {
@@ -81,5 +86,6 @@ public class ModelService : IModelService {
             throw new NotFoundException("Model not found");
         }
         await _modelsRepository.DeleteAsync(model, token);
+        _logger.LogInformation("Model {ModelId} deleted", id);
     }
 }

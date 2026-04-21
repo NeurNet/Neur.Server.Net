@@ -58,6 +58,7 @@ public class ChatService : IChatService {
         );
         await _chatsRepository.AddAsync(chat, token);
         await _unitOfWork.SaveChangesAsync(token);
+        _logger.LogInformation("Chat {ChatId} created with model {ModelId}", chat.Id, modelId);
         return chat;
     }
 
@@ -68,6 +69,7 @@ public class ChatService : IChatService {
         }
         await _chatsRepository.DeleteAsync(chatId, token);
         await _unitOfWork.SaveChangesAsync(token);
+        _logger.LogInformation("Chat {ChatId} deleted", chatId);
     }
 
     public async Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, CancellationToken token = default) {
