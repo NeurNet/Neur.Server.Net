@@ -20,19 +20,21 @@ public class GenerationQueueService {
     }
 
     public async Task EnqueueAsync(GenerationRequestEntity request, string context) {
-        _contexts[request.Id] = context;
-        _pendingTasks.TryAdd(request.Id, new TaskCompletionSource<Stream>());
+        if (!_pendingTasks.TryAdd(request.UserId, new TaskCompletionSource<Stream>())) {
+            throw new QueueException("User already in queue");
+        };
+        _contexts[request.UserId] = context;
         await _queue.Writer.WriteAsync(request);
-        _logger.LogInformation("Queued generation request with id: {userId}", request.Id);
+        _logger.LogInformation("Queued generation request");
     }
 
-    public string? GetContext(Guid requestId) {
-        _contexts.TryGetValue(requestId, out var context);
+    public string? GetContext(Guid userId) {
+        _contexts.TryGetValue(userId, out var context);
         return context;
     }
 
-    public async Task<Stream> WaitForResultAsync(Guid requestId, CancellationToken cancellationToken) {
-        if (_pendingTasks.TryGetValue(requestId, out var tcs)) {
+    public async Task<Stream> WaitForResultAsync(Guid userId, CancellationToken cancellationToken) {
+        if (_pendingTasks.TryGetValue(userId, out var tcs)) {
             _logger.LogInformation("Waiting for request processing...");
             return await tcs.Task.WaitAsync(cancellationToken);
         }
@@ -41,21 +43,24 @@ public class GenerationQueueService {
 
     public ChannelReader<GenerationRequestEntity> GetEnqueueReader() => _queue.Reader;
 
-    public void CompleteRequest(Guid requestId, Stream result) {
-        _logger.LogInformation("Return generation output stream for request: {requestId}", requestId);
-        if (_pendingTasks.TryGetValue(requestId, out var tcs)) {
+    public void GiveResult(Guid userId, Stream result) {
+        _logger.LogInformation("Return generation output stream");
+        if (_pendingTasks.TryGetValue(userId, out var tcs)) {
             tcs.SetResult(result);
         }
-        _pendingTasks.TryRemove(requestId, out _);
-        _contexts.TryRemove(requestId, out _);
     }
 
-    public void FailRequest(Guid requestId, Exception exception) {
-        _logger.LogError(exception, "The request was aborted with an error: {requestId}",  requestId);
-        if (_pendingTasks.TryGetValue(requestId, out var tcs)) {
+    public void CompleteRequest(Guid userId) {
+        _pendingTasks.TryRemove(userId, out _);
+        _contexts.TryRemove(userId, out _);
+    }
+
+    public void FailRequest(Guid userId, Exception exception) {
+        _logger.LogError(exception, "The request was aborted with an error");
+        if (_pendingTasks.TryGetValue(userId, out var tcs)) {
             tcs.SetException(exception);
         }
-        _pendingTasks.TryRemove(requestId, out _);
-        _contexts.TryRemove(requestId, out _);
+        _pendingTasks.TryRemove(userId, out _);
+        _contexts.TryRemove(userId, out _);
     }
 }
