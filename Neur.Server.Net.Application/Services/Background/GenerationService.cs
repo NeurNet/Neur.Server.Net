@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Interfaces.Clients;
@@ -17,10 +18,12 @@ namespace Neur.Server.Net.Application.Services.Background;
 public class GenerationService : BackgroundService {
     private readonly GenerationQueueService _generationQueue;
     private readonly IOllamaClient _ollamaClient;
+    private readonly ILogger<GenerationService> _logger;
     
-    public GenerationService(GenerationQueueService generationQueue, IOllamaClient ollamaClient) {
+    public GenerationService(GenerationQueueService generationQueue, IOllamaClient ollamaClient, ILogger<GenerationService> logger) {
         _generationQueue = generationQueue;
         _ollamaClient = ollamaClient;
+        _logger = logger;
     }
 
     public async IAsyncEnumerable<string> StreamGeneration(GenerationRequestEntity request, string prompt, Func<Task> onResponse, CancellationToken ctsToken) {
@@ -33,17 +36,16 @@ public class GenerationService : BackgroundService {
     }
 
     protected override async Task ExecuteAsync(CancellationToken ctsToken) {
-        Console.WriteLine("Сервис генерации запущен!");
+        _logger.LogInformation("Generation Service is running!");
         while (!ctsToken.IsCancellationRequested) {
             var reader = _generationQueue.GetEnqueueReader();
             await foreach (var request in reader.ReadAllAsync(ctsToken)) {
                 try {
-                    Console.WriteLine($"НОВЫЙ ЗАПРОС: {request.Id}");
+                    _logger.LogInformation("Processing generation request {requestId}", request.Id);
                     await ProcessRequest(request, ctsToken);
-                    Console.WriteLine("Обработано");
                 }
                 catch (Exception ex) {
-                    Console.WriteLine($"Error: {ex.Message}");
+                    _logger.LogError(ex, "Generation request could not be processed.");
                     _generationQueue.FailRequest(request.Id, ex);
                 }
             }

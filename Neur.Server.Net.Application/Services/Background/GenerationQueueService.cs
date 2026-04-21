@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
+using Microsoft.Extensions.Logging;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Core.Entities;
 
@@ -9,18 +10,20 @@ public class GenerationQueueService {
     private readonly Channel<GenerationRequestEntity> _queue;
     private readonly ConcurrentDictionary<Guid, TaskCompletionSource<Stream>> _pendingTasks;
     private readonly ConcurrentDictionary<Guid, string> _contexts;
+    private readonly ILogger<GenerationQueueService> _logger;
 
-    public GenerationQueueService() {
+    public GenerationQueueService(ILogger<GenerationQueueService> logger) {
         _queue = Channel.CreateUnbounded<GenerationRequestEntity>(new UnboundedChannelOptions() { SingleReader = true, SingleWriter = false });
         _pendingTasks = new ConcurrentDictionary<Guid, TaskCompletionSource<Stream>>();
         _contexts = new ConcurrentDictionary<Guid, string>();
+        _logger = logger;
     }
 
     public async Task EnqueueAsync(GenerationRequestEntity request, string context) {
         _contexts[request.Id] = context;
         _pendingTasks.TryAdd(request.Id, new TaskCompletionSource<Stream>());
         await _queue.Writer.WriteAsync(request);
-        Console.WriteLine($"Добавлен запрос в очередь: {request.Id}");
+        _logger.LogInformation("Queued generation request with id: {userId}", request.Id);
     }
 
     public string? GetContext(Guid requestId) {
@@ -30,8 +33,8 @@ public class GenerationQueueService {
 
     public async Task<Stream> WaitForResultAsync(Guid requestId, CancellationToken cancellationToken) {
         if (_pendingTasks.TryGetValue(requestId, out var tcs)) {
-            Console.WriteLine("ОЖИДАНИЕ ВЫПОЛНЕНИЯ ЗАПРОСА");
-            return await tcs.Task;
+            _logger.LogInformation("Waiting for request processing...");
+            return await tcs.Task.WaitAsync(cancellationToken);
         }
         throw new NotFoundException();
     }
@@ -39,7 +42,7 @@ public class GenerationQueueService {
     public ChannelReader<GenerationRequestEntity> GetEnqueueReader() => _queue.Reader;
 
     public void CompleteRequest(Guid requestId, Stream result) {
-        Console.WriteLine("УСПЕШНОЕ ЗАВЕРШЕНИЕ");
+        _logger.LogInformation("Return generation output stream for request: {requestId}", requestId);
         if (_pendingTasks.TryGetValue(requestId, out var tcs)) {
             tcs.SetResult(result);
         }
@@ -48,7 +51,7 @@ public class GenerationQueueService {
     }
 
     public void FailRequest(Guid requestId, Exception exception) {
-        Console.WriteLine("ОШИБКА, ЗАВЕРШАЮ");
+        _logger.LogError(exception, "The request was aborted with an error: {requestId}",  requestId);
         if (_pendingTasks.TryGetValue(requestId, out var tcs)) {
             tcs.SetException(exception);
         }

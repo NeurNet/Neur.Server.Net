@@ -15,8 +15,10 @@ using Neur.Server.Net.Infrastructure.Interfaces;
 using Neur.Server.Net.Infrastructure.Services;
 using Neur.Server.Net.Postgres;
 using Neur.Server.Net.Postgres.Extensions;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddLogging();
 
 builder.Services.AddCorsPolicy(builder.Configuration.GetSection("Services").Get<ServiceOptions>());
 builder.Services.AddDatabaseConfiguration();
@@ -33,8 +35,7 @@ builder.Services.Configure<OllamaClientOptions>(builder.Configuration.GetSection
 var collegeClientOptions = builder.Configuration.GetSection("Services").GetSection(nameof(CollegeClient))
     .Get<CollegeClientOptions>()!;
 
-builder.Services.AddHttpClient<ICollegeClient, CollegeClient>(client =>
-{
+builder.Services.AddHttpClient<ICollegeClient, CollegeClient>(client => {
     client.Timeout = TimeSpan.FromSeconds(collegeClientOptions.TimeoutSeconds);
 });
 
@@ -53,31 +54,30 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddApiAuthentication(builder.Configuration.GetSection(nameof(JwtOptions)).Get<JwtOptions>());
 
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
+builder.Services.ConfigureHttpJsonOptions(options => {
     options.SerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
 });
 
-builder.Services.AddControllers().AddJsonOptions(options =>
-{
+builder.Services.AddControllers().AddJsonOptions(options => {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
 });
 
 var app = builder.Build();
+app.UseSerilogRequestLogging();
+
 app.UseMiddleware<MiddlewareHandler>();
 
-// if (app.Environment.IsDevelopment()) {
-//     app.UseSwagger();
-//     app.UseSwaggerUI();
-// }
-
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment()) {
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseCors("CorsPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddleware<LoggingMiddleware>();
 
 app.AddMappedEndpoints();
 
@@ -86,4 +86,5 @@ using (var scope = app.Services.CreateScope()) {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
 }
+
 app.Run();

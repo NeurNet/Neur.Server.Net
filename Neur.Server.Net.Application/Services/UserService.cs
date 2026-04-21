@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Neur.Server.Net.Application.Exceptions;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
@@ -17,13 +18,15 @@ public class UserService : IUserService {
     private readonly ICollegeClient _collegeClient;
     private readonly IJwtProvider _jwtProvider;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<UserService> _logger;
 
-    public UserService(IUsersRepository usersRepository, IGenerationRequestsRepository requestsRepository, ICollegeClient collegeClient, IJwtProvider jwtProvider, IUnitOfWork unitOfWork) {
+    public UserService(IUsersRepository usersRepository, IGenerationRequestsRepository requestsRepository, ICollegeClient collegeClient, IJwtProvider jwtProvider, IUnitOfWork unitOfWork, ILogger<UserService> logger) {
         _usersRepository = usersRepository;
         _requestsRepository = requestsRepository;
         _collegeClient = collegeClient;
         _jwtProvider = jwtProvider;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
     
     private UserRole DeterminateRole(string role) {
@@ -46,6 +49,7 @@ public class UserService : IUserService {
         try {
             var user = await _usersRepository.GetByLdapIdAsync(username);
             var token = _jwtProvider.GenerateToken(user);
+            _logger.LogInformation("User logged in");
             return token;
         }
         catch (NullReferenceException ex) {
@@ -62,6 +66,7 @@ public class UserService : IUserService {
             await _usersRepository.AddAsync(newUser);
             await _unitOfWork.SaveChangesAsync();
             var token = _jwtProvider.GenerateToken(newUser);
+            _logger.LogInformation("New user registered with role {Role}", newUser.Role);
             return token;
         }
     }
@@ -77,5 +82,6 @@ public class UserService : IUserService {
         }
 
         await _usersRepository.UpdateRoleAsync(userId, role);
+        _logger.LogInformation("Role changed to {Role} for user {TargetUserId}", role, userId);
     }
 }
