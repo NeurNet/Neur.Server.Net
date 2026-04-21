@@ -6,6 +6,7 @@ using Microsoft.Net.Http.Headers;
 using Neur.Server.Net.API.EndPoints;
 using Neur.Server.Net.API.Options;
 using Neur.Server.Net.Infrastructure;
+using Serilog;
 
 namespace Neur.Server.Net.API.Extensions;
 
@@ -34,7 +35,7 @@ public static class ApiExtensions {
     }
 
     public static void AddCorsPolicy(this IServiceCollection services, ServiceOptions serviceOptions) {
-        Console.WriteLine("Frontend: " + serviceOptions.Frontend.url);
+        Log.Debug("Neur.Client.App: {frontendUrl}", serviceOptions.Frontend.url);
         services.AddCors(options => {
             options.AddPolicy("CorsPolicy", policy => {
                 policy.WithOrigins(serviceOptions.Frontend.url)

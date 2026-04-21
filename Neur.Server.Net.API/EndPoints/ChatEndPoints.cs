@@ -67,9 +67,9 @@ public static class ChatEndPoints {
     }
 
     private static async Task Generate(Guid id, [FromBody] GenerateRequest request, 
-        IChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context) {
+        IChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context, CancellationToken cancellationToken) {
         
-        var cts = new CancellationTokenSource();
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(TimeSpan.FromSeconds(80));
         
         context.Response.ContentType = "application/x-ndjson";
