@@ -8,6 +8,7 @@ using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Interfaces.Clients;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
+using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure.Clients;
 using Neur.Server.Net.Infrastructure.Clients.Contracts.OllamaClient;
 using Neur.Server.Net.Infrastructure.Interfaces;
@@ -28,11 +29,12 @@ public class GenerationService : BackgroundService {
 
     public async IAsyncEnumerable<string> StreamGeneration(GenerationRequestEntity request, string prompt, Func<Task> onResponse, CancellationToken ctsToken) {
         await _generationQueue.EnqueueAsync(request, prompt);
-        var stream = await _generationQueue.WaitForResultAsync(request.Id, ctsToken);
+        var stream = await _generationQueue.WaitForResultAsync(request.UserId, ctsToken);
         await onResponse();
         await foreach (var chunk in _ollamaClient.DeserializeStream(stream, ctsToken)) {
             yield return chunk;
         }
+        _generationQueue.CompleteRequest(request.UserId);
     }
 
     protected override async Task ExecuteAsync(CancellationToken ctsToken) {
@@ -46,7 +48,7 @@ public class GenerationService : BackgroundService {
                 }
                 catch (Exception ex) {
                     _logger.LogError(ex, "Generation request could not be processed.");
-                    _generationQueue.FailRequest(request.Id, ex);
+                    _generationQueue.FailRequest(request.UserId, ex);
                 }
             }
             await Task.Delay(100, ctsToken);
@@ -54,12 +56,12 @@ public class GenerationService : BackgroundService {
     }
 
     private async Task ProcessRequest(GenerationRequestEntity request, CancellationToken ctsToken) {
-        var prompt = _generationQueue.GetContext(request.Id);
+        var prompt = _generationQueue.GetContext(request.UserId);
         if (prompt == null) {
             throw new NotFoundException();
         }
         var ollamaRequest = new OllamaGenerationRequest(request.Model.ModelName, prompt);
         var stream = await _ollamaClient.GenerateStreamAsync(ollamaRequest, ctsToken);
-        _generationQueue.CompleteRequest(request.Id, stream);
+        _generationQueue.GiveResult(request.UserId, stream);
     }
 }
