@@ -11,4 +11,5 @@ public interface IUsersRepository {
     Task<List<(UserEntity User, DateTime? LastRequestTime)>> GetAllWithLastRequestTimeAsync(
         CancellationToken token = default);
     Task UpdateRoleAsync(Guid id, UserRole role, CancellationToken token = default);
+    Task<int> GetCountAsync(CancellationToken token = default);
 }

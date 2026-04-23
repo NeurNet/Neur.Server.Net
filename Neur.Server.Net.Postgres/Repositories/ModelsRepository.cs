@@ -31,4 +31,8 @@ public class ModelsRepository : IModelsRepository {
     public async Task<List<ModelEntity>> GetAllAsync(CancellationToken token = default) {
         return await _db.Models.AsNoTracking().ToListAsync(token);
     }
+
+    public async Task<int> GetCountAsync(CancellationToken token = default) {
+        return await _db.Models.CountAsync(token);
+    }
 }

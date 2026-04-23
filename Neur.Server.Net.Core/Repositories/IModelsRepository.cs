@@ -9,4 +9,5 @@ public interface IModelsRepository {
     Task DeleteAsync(ModelEntity model, CancellationToken token = default);
     Task<ModelEntity?> GetAsync(Guid id, CancellationToken token = default);
     Task<List<ModelEntity>> GetAllAsync(CancellationToken token = default);
+    Task<int> GetCountAsync(CancellationToken token = default);
 }

@@ -20,13 +20,8 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 builder.AddLogging();
 
-builder.Services.AddCorsPolicy(builder.Configuration.GetSection("Services").Get<ServiceOptions>());
-builder.Services.AddDatabaseConfiguration();
+// Configuration
 
-builder.Services.AddSingleton<GenerationService>();
-builder.Services.AddHostedService(sp => sp.GetRequiredService<GenerationService>());
-builder.Services.AddSingleton<GenerationQueueService>();
-builder.Services.AddSwaggerApi();
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(nameof(JwtOptions)));
 builder.Services.Configure<CollegeClientOptions>(builder.Configuration.GetSection("Services").GetSection(
     nameof(CollegeClient)));
@@ -34,6 +29,21 @@ builder.Services.Configure<OllamaClientOptions>(builder.Configuration.GetSection
 
 var collegeClientOptions = builder.Configuration.GetSection("Services").GetSection(nameof(CollegeClient))
     .Get<CollegeClientOptions>()!;
+
+builder.Services.ConfigureHttpJsonOptions(options => {
+    options.SerializerOptions.DefaultIgnoreCondition = 
+        JsonIgnoreCondition.WhenWritingNull;
+    options.SerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
+});
+
+
+builder.Services.AddCorsPolicy(builder.Configuration.GetSection("Services").Get<ServiceOptions>());
+builder.Services.AddDatabaseConfiguration();
+
+builder.Services.AddSingleton<GenerationService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<GenerationService>());
+builder.Services.AddSingleton<GenerationQueueService>();
+builder.Services.AddSwaggerApi();
 
 builder.Services.AddHttpClient<ICollegeClient, CollegeClient>(client => {
     client.Timeout = TimeSpan.FromSeconds(collegeClientOptions.TimeoutSeconds);
@@ -48,19 +58,12 @@ builder.Services.AddScoped<IModelService, ModelService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IOllamaService, OllamaService>();
 builder.Services.AddScoped<GenerationRequestService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddApiAuthentication(builder.Configuration.GetSection(nameof(JwtOptions)).Get<JwtOptions>());
-
-builder.Services.ConfigureHttpJsonOptions(options => {
-    options.SerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
-});
-
-builder.Services.AddControllers().AddJsonOptions(options => {
-    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
-});
 
 var app = builder.Build();
 app.UseSerilogRequestLogging();

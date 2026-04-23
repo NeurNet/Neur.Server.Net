@@ -61,4 +61,8 @@ public class UsersRepository : IUsersRepository {
             .Where(u => u.Id == id)
             .ExecuteUpdateAsync(s => s.SetProperty(u => u.Role, role), token);
     }
+
+    public async Task<int> GetCountAsync(CancellationToken token = default) {
+        return await _db.Users.CountAsync(token);
+    }
 }
