@@ -14,24 +14,23 @@ public static class ManagementEndPoints {
     public static IEndpointRouteBuilder MapManagementEndPoints(this IEndpointRouteBuilder app) {
         var endpoints = app.MapGroup("/api/management")
             .WithTags("Management")
-            .RequireAuthorization("TeacherOrAdmin");
+            .RequireAuthorization("TeacherOrAdmin")
+            .ProducesProblem(401)
+            .ProducesProblem(403);
 
         endpoints.MapGet("/dashboard", GetDashboard)
             .WithSummary("Получить статистику для дашборда")
-            .Produces<DashboardResponse>(200)
-            .Produces(401);
+            .Produces<DashboardResponse>(200);
 
         endpoints.MapPost("/user/tokens", GiveTokens)
             .WithSummary("Передать токены пользователю")
             .Produces(200)
             .Produces(400)
-            .Produces(401)
             .Produces(404);
 
         endpoints.MapPost("/user", ChangeUserRole)
             .WithSummary("Изменить роль у пользователя")
             .Produces(200)
-            .Produces(401)
             .Produces(404)
             .RequireAuthorization("AdminOnly");
         

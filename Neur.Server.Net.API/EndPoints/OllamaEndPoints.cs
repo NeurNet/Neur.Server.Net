@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Neur.Server.Net.API.Contracts;
 using Neur.Server.Net.API.Contracts.Ollama;
 using Neur.Server.Net.Application.Interfaces.Clients.Contracts.OllamaClient;
 using Neur.Server.Net.Application.Interfaces.Services;
