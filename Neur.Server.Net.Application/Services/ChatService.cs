@@ -133,7 +133,7 @@ public class ChatService : IChatService {
 
         var chatRequest = await BuildChatRequestAsync(chatId, chat.Model.ModelName, chat.Model.Context, prompt, token);
         var messageRequest = new MessageEntity(chatId, MessageRole.User, prompt);
-        var generationRequest = new GenerationRequestEntity(user.Id, chat.ModelId.Value, 1, messageRequest.Id);
+        var generationRequest = new GenerationRequestEntity(user.Id, chat.ModelId.Value, 1, messageRequest.Id, chat.Model.Name, chat.Model.ModelName);
 
         // Первая операция
         await _messagesRepository.AddAsync(messageRequest, token);

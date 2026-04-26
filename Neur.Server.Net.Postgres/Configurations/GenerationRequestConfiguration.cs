@@ -28,6 +28,8 @@ public class GenerationRequestConfiguration : IEntityTypeConfiguration<Generatio
             .WithMany()
             .HasForeignKey(x => x.ResponseMessageId)
             .OnDelete(DeleteBehavior.SetNull);
+        builder.Property(x => x.ModelName).IsRequired();
+        builder.Property(x => x.ModelOllama).IsRequired();
         builder.HasIndex(x => x.CreatedAt);
         builder.Property(x => x.StartedAt);
         builder.Property(x => x.FinishedAt);
