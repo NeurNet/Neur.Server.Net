@@ -10,9 +10,21 @@ public static class RequestsExtenstion {
                 x.Id, x.ModelId, x.ModelName, x.ModelOllama, x.TokenCost, x.Status, x.CreatedAt,
                 x.StartedAt, x.FinishedAt, 
                 new GenerationRequestUserResponse(x.User.Id, x.User.Username, x.User.Name, x.User.Surname),
-                x.ResponseMessage != null ? new GenerationRequestMessageResponse(x.ResponseMessageId!.Value, x.ResponseMessage.Role, x.ResponseMessage.Content) : null
+                x.ResponseMessage != null ? 
+                    new GenerationRequestMessageResponse(x.ResponseMessageId!.Value, x.ResponseMessage.Role, x.ResponseMessage.Content)
+                    : null
             )
         );
         return new GenerationRequestResponse(items, source.count);
+    }
+
+    public static UserGenerationRequestResponse ToUserResponse(this (IEnumerable<GenerationRequestEntity> requests, int count) source) {
+        var items = source.requests.Select(x =>
+            new UserGenerationRequestResponseItem(
+                x.Id, x.ModelId, x.ModelName, x.ModelOllama, x.TokenCost, x.Status, x.CreatedAt,
+                x.StartedAt, x.FinishedAt
+            )
+        );
+        return new UserGenerationRequestResponse(items, source.count);
     }
 }

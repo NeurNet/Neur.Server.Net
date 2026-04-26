@@ -37,11 +37,10 @@ public class GenerationRequestsRepository : IGenerationRequestsRepository {
             .FirstOrDefaultAsync(token);
     }
 
-    public async Task<List<GenerationRequestEntity>> GetPartByRoleAsync(int page, int pageSize, UserRole role, CancellationToken token) {
+    public async Task<List<GenerationRequestEntity>> GetPageByRoleAsync(int page, int pageSize, UserRole role, CancellationToken token) {
         return await _db.GenerationRequests
             .OrderByDescending(x => x.CreatedAt)
             .Include(x => x.User)
-            .Include(x => x.Model)
             .Include(x => x.ResponseMessage)
             .Where(x => x.User.Role <= role)
             .Skip((page - 1) * pageSize).Take(pageSize)
@@ -54,5 +53,20 @@ public class GenerationRequestsRepository : IGenerationRequestsRepository {
             .Include(x => x.User)
             .Where(x => x.User.Role <= role)
             .CountAsync(token);
+    }
+
+    public async Task<List<GenerationRequestEntity>> GetUserPageAsync(Guid userId, int page, int pageSize, CancellationToken token) {
+        return await _db.GenerationRequests
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.CreatedAt)
+            .Include(x => x.User)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync(token);
+    }
+
+    public async Task<int> GetUserCountAsync(Guid userId, CancellationToken token) {
+        return await _db.GenerationRequests
+            .CountAsync(x => x.UserId == userId, token);
     }
 }

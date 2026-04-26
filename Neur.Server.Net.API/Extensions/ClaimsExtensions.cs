@@ -4,6 +4,7 @@ using System.Text.Json;
 using Neur.Server.Net.Application.Data;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Core.Data;
+using Neur.Server.Net.Core.Interfaces;
 using Neur.Server.Net.Infrastructure.Extensions;
 
 namespace Neur.Server.Net.API.Extensions;
@@ -12,7 +13,8 @@ public static class ClaimsExtensions {
     public static CurrentUser ToCurrentUser(this ClaimsPrincipal principal) {
         return new CurrentUser(
             Guid.Parse(principal.FindFirst("userId")!.Value),
-            principal.FindFirst("username")!.Value
+            principal.FindFirst("username")!.Value,
+            Enum.Parse<Role>(principal.FindFirstValue(ClaimTypes.Role)!, ignoreCase: true)
         );
     }
 }
