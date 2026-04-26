@@ -11,6 +11,7 @@ using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Infrastructure.Clients;
 using Neur.Server.Net.Infrastructure.Clients.Contracts.OllamaClient;
+using Neur.Server.Net.Infrastructure.Clients;
 using Neur.Server.Net.Infrastructure.Interfaces;
 using Neur.Server.Net.Postgres;
 
@@ -27,11 +28,11 @@ public class GenerationService : BackgroundService {
         _logger = logger;
     }
 
-    public async IAsyncEnumerable<string> StreamGeneration(GenerationRequestEntity request, string prompt, Func<Task> onResponse, CancellationToken ctsToken) {
-        await _generationQueue.EnqueueAsync(request, prompt);
+    public async IAsyncEnumerable<string> StreamGeneration(GenerationRequestEntity request, OllamaChatRequest chatRequest, Func<Task> onResponse, CancellationToken ctsToken) {
+        await _generationQueue.EnqueueAsync(request, chatRequest);
         var stream = await _generationQueue.WaitForResultAsync(request.UserId, ctsToken);
         await onResponse();
-        await foreach (var chunk in _ollamaClient.DeserializeStream(stream, ctsToken)) {
+        await foreach (var chunk in _ollamaClient.DeserializeChatStream(stream, ctsToken)) {
             yield return chunk;
         }
         _generationQueue.CompleteRequest(request.UserId);
@@ -56,12 +57,11 @@ public class GenerationService : BackgroundService {
     }
 
     private async Task ProcessRequest(GenerationRequestEntity request, CancellationToken ctsToken) {
-        var prompt = _generationQueue.GetContext(request.UserId);
-        if (prompt == null) {
+        var chatRequest = _generationQueue.GetContext(request.UserId);
+        if (chatRequest == null) {
             throw new NotFoundException();
         }
-        var ollamaRequest = new OllamaGenerationRequest(request.Model.ModelName, prompt);
-        var stream = await _ollamaClient.GenerateStreamAsync(ollamaRequest, ctsToken);
+        var stream = await _ollamaClient.ChatStreamAsync(chatRequest, ctsToken);
         _generationQueue.GiveResult(request.UserId, stream);
     }
 }

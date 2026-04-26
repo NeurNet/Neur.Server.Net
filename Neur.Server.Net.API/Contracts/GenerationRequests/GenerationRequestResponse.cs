@@ -18,7 +18,7 @@ public record GenerationRequestUserResponse(
 
 public record GenerationRequestResponseItem(
     Guid id,
-    Guid model_id,
+    Guid? model_id,
     string model_name,
     int token_cost,
     RequestStatus status,

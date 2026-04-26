@@ -8,8 +8,8 @@ public static class ChatMapper {
         return new ChatWithMessagesDto(
             chatEntity.Id,
             chatEntity.ModelId,
-            chatEntity.Model.ModelName,
-            chatEntity.Model.Name,
+            chatEntity.Model?.ModelName,
+            chatEntity.Model?.Name,
             chatEntity.CreatedAt,
             chatEntity.UpdatedAt,
             messageEntities.ToResponse()

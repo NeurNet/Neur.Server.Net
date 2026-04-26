@@ -1,15 +1,17 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Neur.Server.Net.Application.Exceptions;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Extensions;
 using Neur.Server.Net.Application.Interfaces;
+using Neur.Server.Net.Application.Interfaces.Clients.Contracts.OllamaClient;
 using Neur.Server.Net.Application.Interfaces.Services;
 using Neur.Server.Net.Application.Services.Background;
 using Neur.Server.Net.Application.Services.DTO.ChatService;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Repositories;
-using Neur.Server.Net.Infrastructure;
+using Neur.Server.Net.Infrastructure.Clients.Contracts.OllamaClient;
 
 namespace Neur.Server.Net.Application.Services;
 
@@ -37,14 +39,34 @@ public class ChatService : IChatService {
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
-    private async Task<string> ReadContextAsync(Guid chatId, string currentMessage, string baseContext, CancellationToken token = default) {
-        List<MessageEntity> messages = await _messagesRepository.GetChatMessagesAsync(chatId, token);
-        var contextManager = new ContextManager(1000);
-        
-        contextManager.AddBaseContext(baseContext);
-        contextManager.AddChatHistory(messages);
-        contextManager.AddCurrentPrompt(currentMessage);
-        return contextManager.GetContext();
+    private static string StripThinkTags(string content) {
+        var result = string.Empty;
+        var lines = content.Split("\n");
+        var inThink = false;
+        foreach (var line in lines) {
+            if (line == "<think>") { inThink = true; continue; }
+            if (line == "</think>") { inThink = false; continue; }
+            if (!inThink) result += line;
+        }
+        return result.Trim();
+    }
+
+    private async Task<OllamaChatRequest> BuildChatRequestAsync(
+        Guid chatId, string modelName, string systemContext, string currentMessage, CancellationToken token = default) {
+
+        var history = await _messagesRepository.GetChatMessagesAsync(chatId, token);
+        var messages = new List<OllamaChatMessage>();
+
+        if (!string.IsNullOrEmpty(systemContext))
+            messages.Add(new OllamaChatMessage("system", systemContext));
+
+        foreach (var msg in history)
+            messages.Add(new OllamaChatMessage(msg.Role.ToString().ToLower(), StripThinkTags(msg.Content)));
+
+        messages.Add(new OllamaChatMessage("user", currentMessage));
+
+        _logger.LogInformation("Chat request built: {MessageCount} messages", messages.Count);
+        return new OllamaChatRequest(modelName, messages);
     }
     public async Task<ChatEntity> CreateChatAsync(Guid userId, Guid modelId, CancellationToken token = default) {
         var model = await _modelsRepository.GetAsync(modelId, token);
@@ -99,15 +121,19 @@ public class ChatService : IChatService {
             throw new NotFoundException();
         }
 
+        if (chat.Model == null || chat.ModelId == null) {
+            throw new ModelDeletedException();
+        }
+
         var user = chat.User;
         if (user.Tokens <= 0) {
             _logger.LogInformation("User {UserId} has no tokens left", user.Id);
             throw new BillingException("Not enough tokens");
         }
 
-        var promptContext = await ReadContextAsync(chatId, prompt, chat.Model.Context, token);
+        var chatRequest = await BuildChatRequestAsync(chatId, chat.Model.ModelName, chat.Model.Context, prompt, token);
         var messageRequest = new MessageEntity(chatId, MessageRole.User, prompt);
-        var generationRequest = new GenerationRequestEntity(user.Id, chat.ModelId, 1, messageRequest.Id);
+        var generationRequest = new GenerationRequestEntity(user.Id, chat.ModelId.Value, 1, messageRequest.Id);
 
         // Первая операция
         await _messagesRepository.AddAsync(messageRequest, token);
@@ -128,7 +154,7 @@ public class ChatService : IChatService {
         };
 
         try {
-            await foreach (var chunk in _generationService.StreamGeneration(generationRequest, promptContext, onResponse, token)) {
+            await foreach (var chunk in _generationService.StreamGeneration(generationRequest, chatRequest, onResponse, token)) {
                 modelResponse.Append(chunk);
                 yield return chunk;
             }

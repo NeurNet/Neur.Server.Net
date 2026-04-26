@@ -13,7 +13,8 @@ public class GenerationRequestConfiguration : IEntityTypeConfiguration<Generatio
         builder
             .HasOne(x => x.Model)
             .WithMany()
-            .HasForeignKey(x => x.ModelId);
+            .HasForeignKey(x => x.ModelId)
+            .OnDelete(DeleteBehavior.SetNull);
         builder
             .HasOne(x => x.User)
             .WithMany()
@@ -26,7 +27,7 @@ public class GenerationRequestConfiguration : IEntityTypeConfiguration<Generatio
             .HasOne(x => x.ResponseMessage)
             .WithMany()
             .HasForeignKey(x => x.ResponseMessageId)
-            .IsRequired(false);
+            .OnDelete(DeleteBehavior.SetNull);
         builder.HasIndex(x => x.CreatedAt);
         builder.Property(x => x.StartedAt);
         builder.Property(x => x.FinishedAt);

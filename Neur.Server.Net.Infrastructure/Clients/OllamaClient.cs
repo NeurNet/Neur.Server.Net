@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.Application.Clients.Options;
 using Neur.Server.Net.Application.Interfaces.Clients;
@@ -15,15 +16,18 @@ namespace Neur.Server.Net.Infrastructure.Clients;
 public class OllamaClient : IOllamaClient {
     private readonly HttpClient _httpClient;
     private readonly OllamaClientOptions _options;
+    private readonly ILogger<OllamaClient> _logger;
 
     /// <summary>
     /// Initializes a new <see cref="OllamaClient"/> class
     /// </summary>
     /// <param name="httpClient">The HTTP client for API requests</param>
     /// <param name="options">Configuration options for the client</param>
-    public OllamaClient(HttpClient httpClient, IOptions<OllamaClientOptions> options) {
+    public OllamaClient(HttpClient httpClient, IOptions<OllamaClientOptions> options, ILogger<OllamaClient> logger) {
         _httpClient = httpClient;
         _options = options.Value;
+        _logger = logger;
+        _logger.LogInformation("OllamaClient: {ip}", _options.url);
     }
     
     /// <summary>
@@ -32,11 +36,11 @@ public class OllamaClient : IOllamaClient {
     /// <param name="generationRequest">Request object</param>
     /// <param name="cts">Cancellation token</param>
     /// <returns></returns>
-    public async Task<Stream> GenerateStreamAsync(OllamaGenerationRequest generationRequest, CancellationToken cts) {
-        var requestBody = JsonSerializer.Serialize(generationRequest);
+    public async Task<Stream> ChatStreamAsync(OllamaChatRequest request, CancellationToken cts) {
+        var requestBody = JsonSerializer.Serialize(request);
         var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
-        var req = new HttpRequestMessage(HttpMethod.Post, $"{_options.url}/api/generate") {
+        var req = new HttpRequestMessage(HttpMethod.Post, $"{_options.url}/api/chat") {
             Content = content
         };
 
@@ -45,16 +49,16 @@ public class OllamaClient : IOllamaClient {
 
         return await response.Content.ReadAsStreamAsync(cts);
     }
-    
-    public async IAsyncEnumerable<string> DeserializeStream(Stream stream, CancellationToken token) {
+
+    public async IAsyncEnumerable<string> DeserializeChatStream(Stream stream, CancellationToken token) {
         using var reader = new StreamReader(stream);
         while (!reader.EndOfStream && !token.IsCancellationRequested) {
             var line = await reader.ReadLineAsync();
             if (line == null) continue;
-            var content = JsonSerializer.Deserialize<OllamaGenerationResponse>(line);
-            if (content == null) continue;
-            
-            yield return content.response;
+            var chunk = JsonSerializer.Deserialize<OllamaChatResponse>(line);
+            if (chunk == null) continue;
+
+            yield return chunk.message.content;
         }
     }
 

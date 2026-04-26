@@ -5,7 +5,7 @@ namespace Neur.Server.Net.Core.Entities;
 
 public class GenerationRequestEntity : Entity {
     public Guid UserId { get; init; }
-    public Guid ModelId { get; init; }
+    public Guid? ModelId { get; init; }
     public Guid PromptMessageId { get; init; }
     public Guid? ResponseMessageId { get; private set; }
     public int TokenCost { get; private init; }
@@ -15,7 +15,7 @@ public class GenerationRequestEntity : Entity {
     public RequestStatus Status { get; private set; }
     
     public UserEntity User { get; private set; }
-    public ModelEntity Model { get; private set; }
+    public ModelEntity? Model { get; private set; }
     public MessageEntity PromptMessage { get; private set; }
     public MessageEntity? ResponseMessage { get; private set; }
     

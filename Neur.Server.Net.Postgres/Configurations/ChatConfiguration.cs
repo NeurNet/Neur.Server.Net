@@ -9,13 +9,16 @@ public class ChatConfiguration : IEntityTypeConfiguration<ChatEntity> {
         builder.ToTable("Chats");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
-        builder.HasOne(x => x.Model).WithMany().HasForeignKey(x => x.ModelId).IsRequired();
+        builder.HasOne(x => x.Model)
+            .WithMany()
+            .HasForeignKey(x => x.ModelId)
+            .OnDelete(DeleteBehavior.SetNull);
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt);
         builder
             .HasOne(x => x.Model)
             .WithMany()
             .HasForeignKey(x => x.ModelId)
-            .IsRequired();
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

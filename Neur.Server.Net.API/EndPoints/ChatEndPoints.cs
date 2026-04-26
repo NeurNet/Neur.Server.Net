@@ -63,7 +63,7 @@ public static class ChatEndPoints {
         var user = claimsPrincipal.ToCurrentUser();
         var chat = await chatService.CreateChatAsync(user.userId, request.modelId);
 
-        return Results.Ok(new CreateChatResponse(chat.Id, chat.ModelId));
+        return Results.Ok(new CreateChatResponse(chat.Id, chat.ModelId.Value));
     }
 
     private static async Task Generate(Guid id, [FromBody] GenerateRequest request, 
@@ -90,8 +90,8 @@ public static class ChatEndPoints {
     private static async Task<IResult> GetAllUserChats(ClaimsPrincipal claimsPrincipal, IChatService chatService) {
         var user = claimsPrincipal.ToCurrentUser();
         var chats = await chatService.GetAllUserChatsAsync(user.userId);
-        var result = chats.Select(chat => new GetChatResponse(chat.Id, chat.ModelId, chat.Model.Name,
-            chat.Model.ModelName, chat.CreatedAt, chat.UpdatedAt)
+        var result = chats.Select(chat => new GetChatResponse(chat.Id, chat.ModelId, chat.Model?.Name,
+            chat.Model?.ModelName, chat.CreatedAt, chat.UpdatedAt)
         ).ToList();
 
         return Results.Ok(result);
