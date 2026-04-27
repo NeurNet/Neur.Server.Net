@@ -98,7 +98,8 @@ public static class ChatEndPoints {
     }
 
     private static async Task<IResult> Get(ClaimsPrincipal claimsPrincipal, Guid id, IChatService chatService) {
-        var messages = await chatService.GetChatMessagesAsync(id);
+        var userInfo = claimsPrincipal.ToCurrentUser();
+        var messages = await chatService.GetChatWithMessagesAsync(userInfo.userId, id);
         return Results.Ok(messages);
     }
 

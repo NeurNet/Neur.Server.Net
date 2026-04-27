@@ -1,3 +1,6 @@
+using Neur.Server.Net.Core.Data;
+using Neur.Server.Net.Core.Interfaces;
+
 namespace Neur.Server.Net.API.Contracts.Users;
 /// <summary>
 /// Ответ от сервера при аутентификации
@@ -11,6 +14,6 @@ public record UserAuthResponse(
     string username,
     string name,
     string surname,
-    string role,
+    UserRole role,
     int tokens
 );

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.API.Contracts.Users;
 using Neur.Server.Net.API.Extensions;
+using Neur.Server.Net.API.Filters;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
@@ -27,7 +28,8 @@ public static class UserEndPoints {
             .WithDescription("Проверяет <b>Cookie</b> в запросе, если секретный ключ соответствует действительному - возвращает пользователя")
             .Produces<UserAuthResponse>(200, "application/json")
             .Produces(401)
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .AddEndpointFilter<UserFilter>();
         endpoints.MapPost("/auth/logout", Logout)
             .WithSummary("Выход из сервиса")
             .WithDescription("Удаляет Cookie <b>'auth_token'</b>");
@@ -63,16 +65,9 @@ public static class UserEndPoints {
         return Results.Ok();
     }
     
-    private static async Task<IResult> Auth(ClaimsPrincipal claimsPrincipal, IUsersRepository userRepository) {
-        var cookie = claimsPrincipal.ToCurrentUser();
-        var user = await userRepository.GetByIdAsync(cookie.userId);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-        
-        var userRole = user.Role.ToString().ToLower();
-        
-        return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, user.Name, user.Surname, userRole, user.Tokens));
+    private static async Task<IResult> Auth(HttpContext ctx, IUsersRepository userRepository) {
+        var user = ctx.GetUser();
+        return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, user.Name, user.Surname, user.Role, user.Tokens));
     }
 
     private static async Task<IResult> GetAll(IUserService userService, CancellationToken cancellationToken) {

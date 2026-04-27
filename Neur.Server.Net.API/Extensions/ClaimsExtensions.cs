@@ -14,7 +14,7 @@ public static class ClaimsExtensions {
         return new CurrentUser(
             Guid.Parse(principal.FindFirst("userId")!.Value),
             principal.FindFirst("username")!.Value,
-            Enum.Parse<Role>(principal.FindFirstValue(ClaimTypes.Role)!, ignoreCase: true)
+            Enum.Parse<UserRole>(principal.FindFirstValue(ClaimTypes.Role)!, ignoreCase: true)
         );
     }
 }
