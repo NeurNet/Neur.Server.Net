@@ -13,14 +13,14 @@ namespace Neur.Server.Net.Postgres.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "ModelName",
                 table: "GenerationRequests",
-                type: "text",
+                type: "Text",
                 nullable: false,
                 defaultValue: "");
 
             migrationBuilder.AddColumn<string>(
                 name: "ModelOllama",
                 table: "GenerationRequests",
-                type: "text",
+                type: "Text",
                 nullable: false,
                 defaultValue: "");
         }

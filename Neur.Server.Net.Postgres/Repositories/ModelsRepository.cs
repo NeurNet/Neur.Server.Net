@@ -23,8 +23,10 @@ public class ModelsRepository : IModelsRepository {
             .ExecuteDeleteAsync();
     }
 
-    public async Task<ModelEntity?> GetAsync(Guid id, CancellationToken token = default) {
-        return await _db.Models
+    public async Task<ModelEntity?> GetAsync(Guid id, bool tracking = false, CancellationToken token = default) {
+        var query = tracking ? _db.Models : _db.Models.AsNoTracking();
+        
+        return await query
             .FirstOrDefaultAsync(model => model.Id == id,  token);
     }
 

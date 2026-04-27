@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Neur.Server.Net.Application.DTOs.Chat;
 using Neur.Server.Net.Application.Exceptions;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Extensions;
@@ -21,6 +22,7 @@ public class ChatService : IChatService {
     private readonly IChatsRepository _chatsRepository;
     private readonly IMessagesRepository _messagesRepository;
     private readonly IGenerationRequestsRepository _requestsRepository;
+    private readonly IUsersRepository _usersRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ChatService> _logger;
 
@@ -28,12 +30,14 @@ public class ChatService : IChatService {
         IChatsRepository chatsRepository, IMessagesRepository messagesRepository, 
         IModelsRepository modelsRepository,
         IGenerationRequestsRepository requestsRepository,
+        IUsersRepository usersRepository,
         IUnitOfWork unitOfWork, ILogger<ChatService> logger) {
         _modelsRepository = modelsRepository;
         _messagesRepository = messagesRepository;
         _generationService = generationService;
         _requestsRepository = requestsRepository;
         _chatsRepository = chatsRepository;
+        _usersRepository = usersRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -63,8 +67,39 @@ public class ChatService : IChatService {
         _logger.LogInformation("Chat request built: {MessageCount} messages", messages.Count);
         return new OllamaChatRequest(modelName, messages);
     }
+
+    private async Task<(ChatEntity, bool)> GetChatSafelyAsync(Guid userId, Guid? chatId, Guid? modelId, CancellationToken token) {
+        ChatEntity? chat;
+        bool isNewChat = false;
+
+        // Пустое поле id модели при создании чата - ошибка в запросе
+        if (chatId == null && modelId == null) throw new ValidateException("model_id must not be null");
+        
+        // Создание нового чата
+        if (chatId == null) {
+            _logger.LogInformation("Chat request returned null chat, creating new chat...");
+            chat = await CreateChatAsync(userId, modelId!.Value, token);
+            var user = await _usersRepository.GetByIdAsync(userId, true, token); // + in tracking
+            isNewChat = true;
+            _logger.LogInformation("The new chat was created: {ChatId}", chat.Id);
+        }
+        else {
+            chat = await _chatsRepository.GetAsync(chatId!.Value, tracking: true, token: token);   
+        }
+        
+        if (chat == null) {
+            throw new NotFoundException("Chat not found");
+        }
+
+        if (chat.Model == null || chat.ModelId == null) {
+            throw new ModelDeletedException();
+        }
+
+        return (chat, isNewChat);
+    }
+    
     public async Task<ChatEntity> CreateChatAsync(Guid userId, Guid modelId, CancellationToken token = default) {
-        var model = await _modelsRepository.GetAsync(modelId, token);
+        var model = await _modelsRepository.GetAsync(modelId,true, token);
         if (model == null) {
             throw new NotFoundException("Model not found");
         }
@@ -106,29 +141,22 @@ public class ChatService : IChatService {
         return await _chatsRepository.GetAllUserChatsAsync(userId, token);
     }
     
-    public async IAsyncEnumerable<string> ProcessPromptAsync(Guid chatId, string prompt, CancellationToken token) {
+    public async IAsyncEnumerable<GenerationChunkResponse> ProcessPromptAsync(Guid userId, Guid? chatId, Guid? modelId, string prompt, CancellationToken token) {
         _logger.LogInformation("Processing prompt in chat {ChatId}", chatId);
-
-        var chat = await _chatsRepository.GetAsync(chatId, tracking: true, token: token);
-
-        if (chat == null) {
-            throw new NotFoundException();
-        }
-
-        if (chat.Model == null || chat.ModelId == null) {
-            throw new ModelDeletedException();
-        }
-
+        
+        var (chat, isNewChat) = await GetChatSafelyAsync(userId, chatId, modelId, token);
         var user = chat.User;
+        
         if (user.Tokens <= 0) {
             _logger.LogInformation("User {UserId} has no tokens left", user.Id);
             throw new BillingException("Not enough tokens");
         }
 
-        var chatMessages = await _messagesRepository.GetUserMessagesAsync(user.Id, chatId, token);
-        var chatRequest = BuildChatRequestAsync(chatMessages, chat.Model.ModelName, chat.Model.Context, prompt);
-        var messageRequest = new MessageEntity(chatId, MessageRole.User, prompt);
-        var generationRequest = new GenerationRequestEntity(user.Id, chat.ModelId.Value, 1, messageRequest.Id, chat.Model.Name, chat.Model.ModelName);
+        var chatMessages = await _messagesRepository.GetUserMessagesAsync(user.Id, chat.Id, token);
+        var chatRequest = BuildChatRequestAsync(chatMessages, chat.Model!.ModelName, chat.Model.Context, prompt);
+        var messageRequest = new MessageEntity(chat.Id, MessageRole.User, prompt);
+        var generationRequest = new GenerationRequestEntity(user.Id, chat.ModelId!.Value, 1, messageRequest.Id, 
+            chat.Model.Name, chat.Model.ModelName);
 
         // Первая операция
         await _messagesRepository.AddAsync(messageRequest, token);
@@ -149,17 +177,19 @@ public class ChatService : IChatService {
         };
 
         try {
+            if (isNewChat) yield return new GenerationChunkResponse(GenerationChunkResponseType.Meta, chat.Id.ToString(), false);
             await foreach (var chunk in _generationService.StreamGeneration(generationRequest, chatRequest, onResponse, token)) {
                 modelResponse.Append(chunk);
-                yield return chunk;
+                yield return new GenerationChunkResponse(GenerationChunkResponseType.Data, chunk, false);
             }
+            yield return new GenerationChunkResponse(GenerationChunkResponseType.Data, "", true);
             completed = true;
         }
         finally {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
             if (completed) {
-                var messageResponse = new MessageEntity(chatId, MessageRole.Assistant, modelResponse.ToString());
+                var messageResponse = new MessageEntity(chat.Id, MessageRole.Assistant, modelResponse.ToString());
                 await _messagesRepository.AddAsync(messageResponse, cts.Token);
                 generationRequest.MarkSuccessFinished(messageResponse.Id);
                 chat.UpdatedAt = DateTime.UtcNow;
