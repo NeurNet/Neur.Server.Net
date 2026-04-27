@@ -20,6 +20,7 @@ public record GenerationRequestResponseItem(
     Guid id,
     Guid? model_id,
     string model_name,
+    string model_ollama,
     int token_cost,
     RequestStatus status,
     DateTime created_at,

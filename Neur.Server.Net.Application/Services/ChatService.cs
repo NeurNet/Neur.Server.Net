@@ -17,7 +17,6 @@ namespace Neur.Server.Net.Application.Services;
 
 public class ChatService : IChatService {
     private readonly GenerationService _generationService;
-    private readonly IUsersRepository _usersRepository;
     private readonly IModelsRepository _modelsRepository;
     private readonly IChatsRepository _chatsRepository;
     private readonly IMessagesRepository _messagesRepository;
@@ -26,11 +25,10 @@ public class ChatService : IChatService {
     private readonly ILogger<ChatService> _logger;
 
     public ChatService(GenerationService generationService,
-        IChatsRepository chatsRepository, IMessagesRepository messagesRepository,
-        IUsersRepository usersRepository, IModelsRepository modelsRepository,
+        IChatsRepository chatsRepository, IMessagesRepository messagesRepository, 
+        IModelsRepository modelsRepository,
         IGenerationRequestsRepository requestsRepository,
         IUnitOfWork unitOfWork, ILogger<ChatService> logger) {
-        _usersRepository = usersRepository;
         _modelsRepository = modelsRepository;
         _messagesRepository = messagesRepository;
         _generationService = generationService;
@@ -51,16 +49,13 @@ public class ChatService : IChatService {
         return result.Trim();
     }
 
-    private async Task<OllamaChatRequest> BuildChatRequestAsync(
-        Guid chatId, string modelName, string systemContext, string currentMessage, CancellationToken token = default) {
-
-        var history = await _messagesRepository.GetChatMessagesAsync(chatId, token);
+    private OllamaChatRequest BuildChatRequestAsync(List<MessageEntity> messageHistory, string modelName, string systemContext, string currentMessage) {
         var messages = new List<OllamaChatMessage>();
 
         if (!string.IsNullOrEmpty(systemContext))
             messages.Add(new OllamaChatMessage("system", systemContext));
 
-        foreach (var msg in history)
+        foreach (var msg in messageHistory)
             messages.Add(new OllamaChatMessage(msg.Role.ToString().ToLower(), StripThinkTags(msg.Content)));
 
         messages.Add(new OllamaChatMessage("user", currentMessage));
@@ -94,21 +89,20 @@ public class ChatService : IChatService {
         _logger.LogInformation("Chat {ChatId} deleted", chatId);
     }
 
-    public async Task<ChatWithMessagesDto> GetChatMessagesAsync(Guid chatId, CancellationToken token = default) {
+    public async Task<ChatWithMessagesDto> GetChatWithMessagesAsync(Guid userId, Guid chatId, CancellationToken token = default) {
         var chat = await _chatsRepository.GetAsync(chatId, false, token);
         if (chat == null) {
             throw new NotFoundException("Chat not found");
         }
-        
-        var messages = await _messagesRepository.GetChatMessagesAsync(chatId, token);
+        var messages = await _messagesRepository.GetUserMessagesAsync(userId, chatId, token);
+        // Чат не принадлежит пользователю
+        if (!messages.Any()) {
+            throw new NotFoundException("Chat not found");
+        }
         return chat.ToResponse(messages);
     }
 
     public async Task<List<ChatEntity>> GetAllUserChatsAsync(Guid userId, CancellationToken token = default) {
-        var user = await _usersRepository.GetByIdAsync(userId, token: token);
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
         return await _chatsRepository.GetAllUserChatsAsync(userId, token);
     }
     
@@ -131,9 +125,10 @@ public class ChatService : IChatService {
             throw new BillingException("Not enough tokens");
         }
 
-        var chatRequest = await BuildChatRequestAsync(chatId, chat.Model.ModelName, chat.Model.Context, prompt, token);
+        var chatMessages = await _messagesRepository.GetUserMessagesAsync(user.Id, chatId, token);
+        var chatRequest = BuildChatRequestAsync(chatMessages, chat.Model.ModelName, chat.Model.Context, prompt);
         var messageRequest = new MessageEntity(chatId, MessageRole.User, prompt);
-        var generationRequest = new GenerationRequestEntity(user.Id, chat.ModelId.Value, 1, messageRequest.Id);
+        var generationRequest = new GenerationRequestEntity(user.Id, chat.ModelId.Value, 1, messageRequest.Id, chat.Model.Name, chat.Model.ModelName);
 
         // Первая операция
         await _messagesRepository.AddAsync(messageRequest, token);

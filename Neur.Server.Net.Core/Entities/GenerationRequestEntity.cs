@@ -9,6 +9,8 @@ public class GenerationRequestEntity : Entity {
     public Guid PromptMessageId { get; init; }
     public Guid? ResponseMessageId { get; private set; }
     public int TokenCost { get; private init; }
+    public string ModelName { get; init; }
+    public string ModelOllama { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? StartedAt { get; private set; }
     public DateTime? FinishedAt { get; private set; }
@@ -21,12 +23,14 @@ public class GenerationRequestEntity : Entity {
     
     private GenerationRequestEntity() {}
 
-    public GenerationRequestEntity(Guid userId, Guid modelId, int tokenCost, Guid promptMessageId) {
+    public GenerationRequestEntity(Guid userId, Guid modelId, int tokenCost, Guid promptMessageId, string modelName, string modelOllama) {
         Id = Guid.NewGuid();
         UserId = userId;
         ModelId = modelId;
         TokenCost = tokenCost;
         PromptMessageId = promptMessageId;
+        ModelName = modelName;
+        ModelOllama = modelOllama;
         Status = RequestStatus.Pending;
         CreatedAt = DateTime.UtcNow;
     }
