@@ -8,6 +8,7 @@ using Neur.Server.Net.API.Contracts.Messages;
 using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Data;
+using Neur.Server.Net.Application.DTOs.Chat;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Interfaces.Services;
@@ -39,7 +40,7 @@ public static class ChatEndPoints {
         endpoints.MapPost("/generate", Generate)
             .WithSummary("Сгенерировать ответ от нейросети")
             .Produces(404)
-            .Produces<GenerateResponse>(200, "application/x-ndjson");
+            .Produces<GenerationChunkResponse>(200, "application/x-ndjson");
         
         endpoints.MapDelete("/{id}", Delete)
             .WithSummary("Удалить чат")
