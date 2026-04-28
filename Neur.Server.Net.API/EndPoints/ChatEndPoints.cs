@@ -1,12 +1,14 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Neur.Server.Net.API.Contracts.Chats;
 using Neur.Server.Net.API.Contracts.Messages;
 using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.Application.Clients;
 using Neur.Server.Net.Application.Data;
+using Neur.Server.Net.Application.DTOs.Chat;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Interfaces.Services;
@@ -26,13 +28,6 @@ public static class ChatEndPoints {
             .ProducesProblem(401)
             .RequireAuthorization();
 
-        endpoints.MapPost(String.Empty, Create)
-            .WithSummary("Создать новый чат")
-            .Produces(400)
-            .Produces(404)
-            .Produces(500)
-            .Produces<CreateChatResponse>(200);
-
         endpoints.MapGet(String.Empty, GetAllUserChats)
             .WithSummary("Получить список всех чатов пользователя")
             .Produces<List<GetChatResponse>>(200);
@@ -42,10 +37,10 @@ public static class ChatEndPoints {
             .Produces(404)
             .Produces<ChatWithMessagesDto>(200);
         
-        endpoints.MapPost("/{id}/generate", Generate)
+        endpoints.MapPost("/generate", Generate)
             .WithSummary("Сгенерировать ответ от нейросети")
             .Produces(404)
-            .Produces<GenerateResponse>(200, "application/x-ndjson");
+            .Produces<GenerationChunkResponse>(200, "application/x-ndjson");
         
         endpoints.MapDelete("/{id}", Delete)
             .WithSummary("Удалить чат")
@@ -56,34 +51,27 @@ public static class ChatEndPoints {
     }
     
     private static readonly JsonSerializerOptions JsonOptions = new() {
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumMemberConverter(JsonNamingPolicy.CamelCase) }
     };
 
-    private static async Task<IResult> Create(ClaimsPrincipal claimsPrincipal, CreateChatRequest request, IChatService chatService) {
-        var user = claimsPrincipal.ToCurrentUser();
-        var chat = await chatService.CreateChatAsync(user.userId, request.modelId);
-
-        return Results.Ok(new CreateChatResponse(chat.Id, chat.ModelId.Value));
-    }
-
-    private static async Task Generate(Guid id, [FromBody] GenerateRequest request, 
-        IChatService chatService, ClaimsPrincipal claimsPrincipal, HttpContext context, CancellationToken cancellationToken) {
+    private static async Task Generate([FromBody] GenerateRequest request, IChatService chatService, 
+        ClaimsPrincipal claimsPrincipal, HttpContext context, CancellationToken cancellationToken) {
         
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(TimeSpan.FromSeconds(80));
+        
+        var userInfo = claimsPrincipal.ToCurrentUser();
         
         context.Response.ContentType = "application/x-ndjson";
         context.Response.Headers["Cache-Control"] = "no-cache";
         context.Response.Headers["Connection"] = "keep-alive";
 
-        await foreach (var chunk in chatService.ProcessPromptAsync(id, request.prompt, cts.Token)) {
-            var json = JsonSerializer.Serialize(new { data = chunk }, JsonOptions);
+        await foreach (var chunk in chatService.ProcessPromptAsync(userInfo.userId, request.ConversationId, request.ModelId, request.Message, cts.Token)) {
+            var json = JsonSerializer.Serialize(chunk, JsonOptions);
             await context.Response.WriteAsync(json + "\n");
             await context.Response.Body.FlushAsync();
         }
-
-        var final = JsonSerializer.Serialize(new { data = "", completed = true }, JsonOptions);
-        await context.Response.WriteAsync(final + "\n");
         await context.Response.CompleteAsync();
     }
 
