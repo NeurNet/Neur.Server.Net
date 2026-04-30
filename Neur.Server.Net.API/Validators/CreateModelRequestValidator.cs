@@ -19,7 +19,7 @@ public class CreateModelRequestValidator : AbstractValidator<CreateModelReqest> 
             .Must(type => 
                 Enum.IsDefined(typeof(ModelType), type)
             )
-            .WithMessage("Invalid model type! Available types: 'text', 'code' or 'image'");
+            .WithMessage("Invalid model type! Available types: 'Text', 'Code' or 'Image'");
         RuleFor(x => x.status)
             .NotEmpty().WithMessage("Status must not be empty")
             .Must(status => 

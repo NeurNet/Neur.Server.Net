@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Neur.Server.Net.API.Extensions;
@@ -31,9 +32,8 @@ var collegeClientOptions = builder.Configuration.GetSection("Services").GetSecti
     .Get<CollegeClientOptions>()!;
 
 builder.Services.ConfigureHttpJsonOptions(options => {
-    options.SerializerOptions.DefaultIgnoreCondition = 
-        JsonIgnoreCondition.WhenWritingNull;
-    options.SerializerOptions.Converters.Add(new JsonStringEnumMemberConverter());
+    options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.SerializerOptions.Converters.Add(new JsonStringEnumMemberConverter(JsonNamingPolicy.CamelCase));
 });
 
 

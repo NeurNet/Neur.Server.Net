@@ -29,7 +29,7 @@ public class ModelService : IModelService {
     public async Task<ModelEntity> CreateAsync(ModelEntity model, CancellationToken token = default) {
         await _modelsRepository.AddAsync(model,  token);
         await _unitOfWork.SaveChangesAsync(token);
-        var savedModel = await _modelsRepository.GetAsync(model.Id,  token);
+        var savedModel = await _modelsRepository.GetAsync(model.Id, false, token);
         
         if (savedModel != null) {
             _logger.LogInformation("Model {ModelId} created", savedModel.Id);
@@ -40,7 +40,7 @@ public class ModelService : IModelService {
     }
 
     public async Task<ModelEntity> GetAsync(Guid id,  CancellationToken token = default) {
-        var model = await _modelsRepository.GetAsync(id, token);
+        var model = await _modelsRepository.GetAsync(id, false, token);
         if (model == null) {
             throw new NotFoundException("Model not found");
         }
@@ -62,7 +62,7 @@ public class ModelService : IModelService {
     }
 
     public async Task UpdateAsync(ModelEntity model, CancellationToken token = default) {
-        var existingModel = await _modelsRepository.GetAsync(model.Id);
+        var existingModel = await _modelsRepository.GetAsync(model.Id, true, token);
 
         if (existingModel == null) {
             throw new NotFoundException("Model not found");
@@ -81,7 +81,7 @@ public class ModelService : IModelService {
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken token = default) {
-        var model = await _modelsRepository.GetAsync(id, token);
+        var model = await _modelsRepository.GetAsync(id, false, token);
         if (model == null) {
             throw new NotFoundException("Model not found");
         }

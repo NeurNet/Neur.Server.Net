@@ -20,7 +20,7 @@ namespace Neur.Server.Net.Postgres.Migrations
                     ModelName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Context = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     Type = table.Column<int>(type: "integer", nullable: false),
-                    Version = table.Column<string>(type: "text", nullable: false),
+                    Version = table.Column<string>(type: "Text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
@@ -35,7 +35,7 @@ namespace Neur.Server.Net.Postgres.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Username = table.Column<string>(type: "text", nullable: false),
+                    Username = table.Column<string>(type: "Text", nullable: false),
                     Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Surname = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Role = table.Column<int>(type: "integer", nullable: false),
@@ -81,7 +81,7 @@ namespace Neur.Server.Net.Postgres.Migrations
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ModelId = table.Column<Guid>(type: "uuid", nullable: false),
                     TokenCost = table.Column<int>(type: "integer", nullable: false),
-                    Prompt = table.Column<string>(type: "text", nullable: false),
+                    Prompt = table.Column<string>(type: "Text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     FinishedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -112,7 +112,7 @@ namespace Neur.Server.Net.Postgres.Migrations
                     ChatId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Role = table.Column<int>(type: "integer", nullable: false),
-                    Content = table.Column<string>(type: "text", nullable: false)
+                    Content = table.Column<string>(type: "Text", nullable: false)
                 },
                 constraints: table =>
                 {

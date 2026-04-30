@@ -11,6 +11,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Reference Include="Macross.Json.Extensions">
+        <HintPath>..\..\..\..\..\.nuget\packages\macross.json.extensions\3.0.0\lib\net6.0\Macross.Json.Extensions.dll</HintPath>
+      </Reference>
       <Reference Include="Microsoft.Extensions.Hosting.Abstractions">
         <HintPath>..\..\..\..\..\.nuget\packages\microsoft.aspnetcore.app.ref\9.0.9\ref\net9.0\Microsoft.Extensions.Hosting.Abstractions.dll</HintPath>
       </Reference>

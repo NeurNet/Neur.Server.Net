@@ -86,7 +86,7 @@ namespace Neur.Server.Net.Postgres.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "Prompt",
                 table: "GenerationRequests",
-                type: "text",
+                type: "Text",
                 nullable: false,
                 defaultValue: "");
         }

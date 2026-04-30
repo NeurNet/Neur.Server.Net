@@ -17,7 +17,7 @@ public class UpdateModelRequestValidator : AbstractValidator<UpdateModelRequest>
         RuleFor(x => x.type)
             .NotEmpty().WithMessage("Type must not be empty")
             .Must(type => Enum.IsDefined(typeof(ModelType), type))
-            .WithMessage("Invalid model type! Available types: 'text', 'code' or 'image'");
+            .WithMessage("Invalid model type! Available types: 'Text', 'Code' or 'Image'");
         RuleFor(x => x.status)
             .NotEmpty().WithMessage("Status must not be empty")
             .Must(status => Enum.IsDefined(typeof(ModelStatus), status))
