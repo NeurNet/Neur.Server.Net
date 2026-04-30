@@ -70,10 +70,8 @@ app.UseSerilogRequestLogging();
 
 app.UseMiddleware<MiddlewareHandler>();
 
-if (app.Environment.IsDevelopment()) {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors("CorsPolicy");
 
