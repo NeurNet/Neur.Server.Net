@@ -27,6 +27,7 @@ public class ChatsRepository : IChatsRepository {
             await _db.Chats
                 .AsNoTracking()
                 .Where(x => x.UserId == userId)
+                .OrderBy(x => x.CreatedAt)
                 .Include(x => x.Model)
                 .ToListAsync(token);
     }
