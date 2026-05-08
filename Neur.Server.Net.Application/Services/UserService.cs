@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Logging;
 using Neur.Server.Net.Application.Exceptions;
 using Neur.Server.Net.Application.Exeptions;
@@ -14,15 +15,13 @@ namespace Neur.Server.Net.Application.Services;
 
 public class UserService : IUserService {
     private readonly IUsersRepository _usersRepository;
-    private readonly IGenerationRequestsRepository _requestsRepository;
     private readonly ICollegeClient _collegeClient;
     private readonly IJwtProvider _jwtProvider;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(IUsersRepository usersRepository, IGenerationRequestsRepository requestsRepository, ICollegeClient collegeClient, IJwtProvider jwtProvider, IUnitOfWork unitOfWork, ILogger<UserService> logger) {
+    public UserService(IUsersRepository usersRepository, ICollegeClient collegeClient, IJwtProvider jwtProvider, IUnitOfWork unitOfWork, ILogger<UserService> logger) {
         _usersRepository = usersRepository;
-        _requestsRepository = requestsRepository;
         _collegeClient = collegeClient;
         _jwtProvider = jwtProvider;
         _unitOfWork = unitOfWork;
@@ -41,12 +40,12 @@ public class UserService : IUserService {
         throw new Exception("UserRole doesn't exist");
     }
     public async Task<string> Login(string username, string password, CancellationToken cancellationToken = default) {
-        // var collegeUser = await _collegeClient.AuthenticateAsync(username, password, cancellationToken);
-        // if (collegeUser == null) {
-        //     throw new NotAuthorizedException();
-        // }
+        var collegeUser = await _collegeClient.AuthenticateAsync(username, password, cancellationToken);
+        if (collegeUser == null) {
+            throw new NotAuthorizedException();
+        }
 
-        var collegeUser = new AuthUserResponse("i24s0202", "admin", "Григорий Воробьёв");
+        // var collegeUser = new AuthUserResponse("i24s0202", "admin", "Григорий Воробьёв");
         try {
             var user = await _usersRepository.GetByLdapIdAsync(username);
             var token = _jwtProvider.GenerateToken(user);
@@ -76,7 +75,11 @@ public class UserService : IUserService {
         return await _usersRepository.GetAllWithLastRequestTimeAsync(token);
     }
 
-    public async Task ChangeUserRole(Guid userId, UserRole role) {
+    public async Task ChangeUserRole(Guid actorId, Guid userId, UserRole role) {
+        if (actorId == userId) {
+            throw new ValidateException("You can't change your role for yourself");
+        }
+        
         var user = await _usersRepository.GetByIdAsync(userId);
         if (user == null) {
             throw new NotFoundException("User not found");

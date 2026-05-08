@@ -44,13 +44,14 @@ public static class ManagementEndPoints {
     }
 
     private static async Task<IResult> GiveTokens(ClaimsPrincipal claims, [FromBody] GiveTokensRequest  request, ITokenService tokenService) {
-        var user =  claims.ToCurrentUser();
+        var user = claims.ToCurrentUser();
         await tokenService.GiveTokens(user.userId, request.user_id, request.token_count);
         return Results.Ok();
     }
 
-    private static async Task<IResult> ChangeUserRole([FromBody] ChangeUserRoleRequest req, IUserService userService) {
-        await userService.ChangeUserRole(req.user_id, req.role);
+    private static async Task<IResult> ChangeUserRole([FromBody] ChangeUserRoleRequest req, IUserService userService, ClaimsPrincipal claims) {
+        var user = claims.ToCurrentUser();
+        await userService.ChangeUserRole(user.userId, req.user_id, req.role);
         return Results.Ok();
     }
 }
