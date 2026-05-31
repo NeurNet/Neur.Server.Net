@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: neur_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret_password
+      POSTGRES_DB: neur_postgres
+    networks:
+      - neurNetwork
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/18/data
+  
+  neur_server:
+    container_name: neur_server
+    build:
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    networks:
+      - neurNetwork
+    ports:
+      - 8080:8080
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+  
+  pg_admin:
+    image: dpage/pgadmin4
+    container_name: neur_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    networks:
+      - neurNetwork
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
+    
+networks:
+  neurNetwork:

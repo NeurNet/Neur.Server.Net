@@ -1,0 +1,13 @@
+using Neur.Server.Net.Application.DTOs.Chat;
+using Neur.Server.Net.Application.Services.DTO.ChatService;
+using Neur.Server.Net.Core.Entities;
+
+namespace Neur.Server.Net.Application.Interfaces.Services;
+
+public interface IChatService {
+    Task<ChatEntity> CreateChatAsync(Guid userId, Guid modelId, CancellationToken token = default);
+    Task DeleteChatAsync(Guid chatId, CancellationToken token = default);
+    Task<ChatWithMessagesDto> GetChatWithMessagesAsync(Guid userId, Guid chatId, CancellationToken token = default);
+    Task<List<ChatEntity>> GetAllUserChatsAsync(Guid userId,  CancellationToken token = default);
+    IAsyncEnumerable<GenerationChunkResponse> ProcessPromptAsync(Guid userId, Guid? chatId, Guid? modelId, string prompt, CancellationToken token);
+}
