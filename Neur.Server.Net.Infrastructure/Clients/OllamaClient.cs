@@ -19,7 +19,7 @@ public class OllamaClient : IOllamaClient {
         _logger = logger;
     }
 
-    public void SetOptions(OllamaSettingsOptions options) {
+    public void SetOptions(OllamaSettingsContent options) {
         _url = options.Url;
         _logger.LogInformation("OllamaClient url updated: {url}", _url);
     }

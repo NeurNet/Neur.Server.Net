@@ -1,5 +1,6 @@
-using System.Text.Json;
 using Microsoft.Extensions.Options;
+using Neur.Server.Net.Application.DTOs;
+using Neur.Server.Net.Application.Extensions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Interfaces.Clients;
 using Neur.Server.Net.Application.Interfaces.Services;
@@ -33,10 +34,10 @@ public class SettingsService : ISettingsService {
     public async Task InitAsync(CancellationToken token = default) {
         var existing = await _settingsRepository.GetAllAsync(token);
         if (existing.Count == 0) {
-            var ollamaEntity = new SettingsEntity(SettingName.Ollama, JsonSerializer.Serialize(_options.OllamaClient));
-            var authEntity = new SettingsEntity(SettingName.Auth, JsonSerializer.Serialize(_options.CollegeClient));
+            var ollamaEntity = new SettingsEntity(SettingName.Ollama, _options.OllamaClient);
+            var authEntity   = new SettingsEntity(SettingName.Auth,   _options.CollegeClient);
             await _settingsRepository.SetAsync(ollamaEntity, token);
-            await _settingsRepository.SetAsync(authEntity, token);
+            await _settingsRepository.SetAsync(authEntity,   token);
             await _unitOfWork.SaveChangesAsync(token);
             existing = [ollamaEntity, authEntity];
         }
@@ -51,17 +52,18 @@ public class SettingsService : ISettingsService {
         ApplyToClient(entity);
     }
 
-    public async Task<List<SettingsEntity>> GetSettingsAsync(CancellationToken token = default) {
-        return await _settingsRepository.GetAllAsync(token);
+    public async Task<List<SettingsDto>> GetSettingsAsync(CancellationToken token = default) {
+        var entities = await _settingsRepository.GetAllAsync(token);
+        return entities.Select(e => e.ToDto()).ToList();
     }
 
     private void ApplyToClient(SettingsEntity entity) {
         switch (entity.Name) {
             case SettingName.Ollama:
-                _ollamaClient.SetOptions(JsonSerializer.Deserialize<OllamaSettingsOptions>(entity.Content)!);
+                _ollamaClient.SetOptions(entity.GetContent<OllamaSettingsContent>());
                 break;
             case SettingName.Auth:
-                _collegeClient.SetOptions(JsonSerializer.Deserialize<AuthSettingsOptions>(entity.Content)!);
+                _collegeClient.SetOptions(entity.GetContent<AuthSettingsContent>());
                 break;
         }
     }

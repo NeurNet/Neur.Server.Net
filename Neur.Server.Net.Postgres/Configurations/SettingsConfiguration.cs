@@ -13,8 +13,9 @@ public class SettingsConfiguration : IEntityTypeConfiguration<SettingsEntity> {
             .IsRequired()
             .HasConversion<string>();
         builder.HasIndex(x => x.Name).IsUnique();
-        builder.Property(x => x.Content)
+        builder.Property(x => x.JsonContent)
             .IsRequired()
-            .HasColumnType("jsonb");
+            .HasColumnType("jsonb")
+            .HasColumnName("Content");
     }
 }

@@ -1,15 +1,17 @@
+using Neur.Server.Net.Core.Entities;
+
 namespace Neur.Server.Net.Application.Options;
 
-public class SettingsOptions {
-    public OllamaSettingsOptions OllamaClient { get; set; } = new();
-    public AuthSettingsOptions CollegeClient { get; set; } = new();
-}
-
-public class OllamaSettingsOptions {
+public class OllamaSettingsContent : SettingsContent {
     public string Url { get; set; } = string.Empty;
 }
 
-public class AuthSettingsOptions {
+public class AuthSettingsContent : SettingsContent {
     public string Url { get; set; } = string.Empty;
     public int TimeoutSeconds { get; set; } = 5;
+}
+
+public class SettingsOptions {
+    public OllamaSettingsContent OllamaClient { get; set; } = new();
+    public AuthSettingsContent CollegeClient { get; set; } = new();
 }

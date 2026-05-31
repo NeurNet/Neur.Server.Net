@@ -17,7 +17,7 @@ public class CollegeClient : ICollegeClient {
         _httpClientFactory = httpClientFactory;
     }
 
-    public void SetOptions(AuthSettingsOptions options) {
+    public void SetOptions(AuthSettingsContent options) {
         _url = options.Url;
         _timeoutSeconds = options.TimeoutSeconds;
     }

@@ -16,7 +16,7 @@ public class SettingsRepository : ISettingsRepository {
         if (existing is null)
             await _db.Settings.AddAsync(entity, token);
         else
-            existing.Content = entity.Content;
+            existing.JsonContent = entity.JsonContent;
     }
 
     public async Task<List<SettingsEntity>> GetAllAsync(CancellationToken token = default) {
