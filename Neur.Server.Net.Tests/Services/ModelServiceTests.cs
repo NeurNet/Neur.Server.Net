@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using MockQueryable.Moq;
 using Moq;
 using FluentAssertions;
 using Neur.Server.Net.Application.Exeptions;
+using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
@@ -11,20 +13,23 @@ using Neur.Server.Net.Core.Repositories;
 using Neur.Server.Net.Postgres;
 
 public class ModelServiceTests {
-    private readonly Mock<ApplicationDbContext> _context = new(Mock.Of<IConfiguration>());
+    private readonly Mock<ApplicationDbContext> _context = new(Mock.Of<IConfiguration>(), Mock.Of<ILoggerFactory>());
     private readonly Mock<IModelsRepository> _modelsRepository = new();
     private readonly Mock<IUsersRepository> _usersRepository = new();
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly ModelService _sut;
 
     public ModelServiceTests() {
-        _sut = new ModelService(_context.Object, _modelsRepository.Object, _usersRepository.Object);
+        _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _sut = new ModelService(_context.Object, _modelsRepository.Object, _usersRepository.Object, _unitOfWork.Object, Mock.Of<ILogger<ModelService>>());
     }
 
     private static ModelEntity MakeModel(Guid? id = null, ModelStatus status = ModelStatus.open) =>
         new ModelEntity(
             id ?? Guid.NewGuid(),
             "Test Model", "test-model", "some context",
-            ModelType.text, "1.0", status,
+            ModelType.Text, "1.0", status,
             DateTime.UtcNow
         );
 
@@ -41,7 +46,7 @@ public class ModelServiceTests {
             .Setup(x => x.AddAsync(model, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _modelsRepository
-            .Setup(x => x.GetAsync(model.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync(model.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(model);
 
         var result = await _sut.CreateAsync(model);
@@ -57,7 +62,7 @@ public class ModelServiceTests {
             .Setup(x => x.AddAsync(model, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _modelsRepository
-            .Setup(x => x.GetAsync(model.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync(model.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ModelEntity?)null);
 
         var act = () => _sut.CreateAsync(model);
@@ -72,7 +77,7 @@ public class ModelServiceTests {
         var model = MakeModel();
 
         _modelsRepository
-            .Setup(x => x.GetAsync(model.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync(model.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(model);
 
         var result = await _sut.GetAsync(model.Id);
@@ -83,7 +88,7 @@ public class ModelServiceTests {
     [Fact]
     public async Task GetAsync_WhenModelNotFound_ThrowsNotFoundException() {
         _modelsRepository
-            .Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ModelEntity?)null);
 
         var act = () => _sut.GetAsync(Guid.NewGuid());
@@ -148,7 +153,7 @@ public class ModelServiceTests {
         var model = MakeModel();
 
         _modelsRepository
-            .Setup(x => x.GetAsync(model.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync(model.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ModelEntity?)null);
 
         var act = () => _sut.UpdateAsync(model);
@@ -160,25 +165,22 @@ public class ModelServiceTests {
     public async Task UpdateAsync_UpdatesAllFieldsAndCallsSaveChanges() {
         var id = Guid.NewGuid();
         var existing = MakeModel(id);
-        var updated = new ModelEntity(id, "New Name", "new-model", "new context", ModelType.code, "2.0", ModelStatus.locked, DateTime.UtcNow);
+        var updated = new ModelEntity(id, "New Name", "new-model", "new context", ModelType.Code, "2.0", ModelStatus.locked, DateTime.UtcNow);
 
         _modelsRepository
-            .Setup(x => x.GetAsync(id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync(id, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
-        _context
-            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
 
         await _sut.UpdateAsync(updated);
 
         existing.Name.Should().Be("New Name");
         existing.ModelName.Should().Be("new-model");
         existing.Context.Should().Be("new context");
-        existing.Type.Should().Be(ModelType.code);
+        existing.Type.Should().Be(ModelType.Code);
         existing.Version.Should().Be("2.0");
         existing.Status.Should().Be(ModelStatus.locked);
         existing.UpdatedAt.Should().NotBeNull();
-        _context.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // --- DeleteAsync ---
@@ -186,7 +188,7 @@ public class ModelServiceTests {
     [Fact]
     public async Task DeleteAsync_ModelNotFound_ThrowsNotFoundException() {
         _modelsRepository
-            .Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((ModelEntity?)null);
 
         var act = () => _sut.DeleteAsync(Guid.NewGuid());
@@ -199,7 +201,7 @@ public class ModelServiceTests {
         var model = MakeModel();
 
         _modelsRepository
-            .Setup(x => x.GetAsync(model.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync(model.Id, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(model);
         _modelsRepository
             .Setup(x => x.DeleteAsync(model, It.IsAny<CancellationToken>()))

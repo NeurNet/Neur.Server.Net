@@ -13,5 +13,6 @@ public static class ConfigurationExtension {
         services.AddScoped<IChatsRepository, ChatsRepository>();
         services.AddScoped<IGenerationRequestsRepository, GenerationRequestsRepository>();
         services.AddScoped<IMessagesRepository, MessagesRepository>();
+        services.AddScoped<ISettingsRepository, SettingsRepository>();
     }
 }

@@ -7,7 +7,6 @@ using Neur.Server.Net.Application.Extensions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Interfaces.Clients.Contracts.OllamaClient;
 using Neur.Server.Net.Application.Interfaces.Services;
-using Neur.Server.Net.Application.Services.Background;
 using Neur.Server.Net.Application.Services.DTO.ChatService;
 using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
@@ -17,7 +16,7 @@ using Neur.Server.Net.Infrastructure.Clients.Contracts.OllamaClient;
 namespace Neur.Server.Net.Application.Services;
 
 public class ChatService : IChatService {
-    private readonly GenerationService _generationService;
+    private readonly IGenerationService _generationService;
     private readonly IModelsRepository _modelsRepository;
     private readonly IChatsRepository _chatsRepository;
     private readonly IMessagesRepository _messagesRepository;
@@ -26,7 +25,7 @@ public class ChatService : IChatService {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ChatService> _logger;
 
-    public ChatService(GenerationService generationService,
+    public ChatService(IGenerationService generationService,
         IChatsRepository chatsRepository, IMessagesRepository messagesRepository, 
         IModelsRepository modelsRepository,
         IGenerationRequestsRepository requestsRepository,
