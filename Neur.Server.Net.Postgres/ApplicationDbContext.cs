@@ -20,6 +20,7 @@ public class ApplicationDbContext : DbContext {
     public virtual DbSet<ChatEntity> Chats { get; set; }
     public virtual DbSet<GenerationRequestEntity> GenerationRequests { get; set; }
     public virtual DbSet<MessageEntity> Messages { get; set; }
+    public virtual DbSet<SettingsEntity> Settings { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         optionsBuilder
@@ -33,5 +34,6 @@ public class ApplicationDbContext : DbContext {
         modelBuilder.ApplyConfiguration(new ChatConfiguration());
         modelBuilder.ApplyConfiguration(new GenerationRequestConfiguration());
         modelBuilder.ApplyConfiguration(new MessageConfiguration());
+        modelBuilder.ApplyConfiguration(new SettingsConfiguration());
     }
 }

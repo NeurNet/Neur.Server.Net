@@ -4,10 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.API.Middleware;
 using Neur.Server.Net.API.Options;
-using Neur.Server.Net.Application.Clients.Options;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Interfaces.Clients;
 using Neur.Server.Net.Application.Interfaces.Services;
+using Neur.Server.Net.Application.Options;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Application.Services.Background;
 using Neur.Server.Net.Infrastructure;
@@ -24,31 +24,23 @@ builder.AddLogging();
 // Configuration
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(nameof(JwtOptions)));
-builder.Services.Configure<CollegeClientOptions>(builder.Configuration.GetSection("Services").GetSection(
-    nameof(CollegeClient)));
-builder.Services.Configure<OllamaClientOptions>(builder.Configuration.GetSection("Services").GetSection(nameof(OllamaClient)));
-
-var collegeClientOptions = builder.Configuration.GetSection("Services").GetSection(nameof(CollegeClient))
-    .Get<CollegeClientOptions>()!;
-
+builder.Services.Configure<SettingsOptions>(builder.Configuration.GetSection("Services"));
 builder.Services.ConfigureHttpJsonOptions(options => {
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     options.SerializerOptions.Converters.Add(new JsonStringEnumMemberConverter(JsonNamingPolicy.CamelCase));
 });
 
 
-builder.Services.AddCorsPolicy(builder.Configuration.GetSection("Services").Get<ServiceOptions>());
+builder.Services.AddCorsPolicy(builder.Configuration.Get<ServiceOptions>());
 builder.Services.AddDatabaseConfiguration();
 
 builder.Services.AddSingleton<GenerationService>();
+builder.Services.AddSingleton<IGenerationService>(sp => sp.GetRequiredService<GenerationService>());
 builder.Services.AddHostedService(sp => sp.GetRequiredService<GenerationService>());
 builder.Services.AddSingleton<GenerationQueueService>();
 builder.Services.AddSwaggerApi();
 
-builder.Services.AddHttpClient<ICollegeClient, CollegeClient>(client => {
-    client.Timeout = TimeSpan.FromSeconds(collegeClientOptions.TimeoutSeconds);
-});
-
+builder.Services.AddSingleton<ICollegeClient, CollegeClient>();
 builder.Services.AddSingleton<IOllamaClient, OllamaClient>();
 builder.Services.AddHttpClient();
 
@@ -59,6 +51,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IOllamaService, OllamaService>();
 builder.Services.AddScoped<GenerationRequestService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<ISettingsService, SettingsService>();
 
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -88,6 +81,9 @@ app.AddMappedEndpoints();
 using (var scope = app.Services.CreateScope()) {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
+
+    var settingsService = scope.ServiceProvider.GetRequiredService<ISettingsService>();
+    await settingsService.InitAsync();
 }
 
 app.Run();

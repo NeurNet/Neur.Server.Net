@@ -17,7 +17,7 @@ using Neur.Server.Net.Postgres;
 
 namespace Neur.Server.Net.Application.Services.Background;
 
-public class GenerationService : BackgroundService {
+public class GenerationService : BackgroundService, IGenerationService {
     private readonly GenerationQueueService _generationQueue;
     private readonly IOllamaClient _ollamaClient;
     private readonly ILogger<GenerationService> _logger;

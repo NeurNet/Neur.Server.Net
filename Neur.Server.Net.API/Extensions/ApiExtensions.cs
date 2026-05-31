@@ -53,5 +53,6 @@ public static class ApiExtensions {
         app.MapRequestEndPoints();
         app.MapManagementEndPoints();
         app.MapOllamaEndPoints();
+        app.MapSettingsEndPoints();
     }
 }
