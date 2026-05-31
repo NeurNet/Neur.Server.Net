@@ -5,6 +5,7 @@ using Neur.Server.Net.API.Contracts.Users;
 using Neur.Server.Net.API.Extensions;
 using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
+using Neur.Server.Net.Application.Interfaces.Services;
 using Neur.Server.Net.Application.Services;
 
 namespace Neur.Server.Net.API.EndPoints;
@@ -13,33 +14,44 @@ public static class ManagementEndPoints {
     public static IEndpointRouteBuilder MapManagementEndPoints(this IEndpointRouteBuilder app) {
         var endpoints = app.MapGroup("/api/management")
             .WithTags("Management")
-            .RequireAuthorization("TeacherOrAdmin");
+            .RequireAuthorization("TeacherOrAdmin")
+            .ProducesProblem(401)
+            .ProducesProblem(403);
+
+        endpoints.MapGet("/dashboard", GetDashboard)
+            .WithSummary("Получить статистику для дашборда")
+            .Produces<DashboardResponse>(200);
 
         endpoints.MapPost("/user/tokens", GiveTokens)
             .WithSummary("Передать токены пользователю")
             .Produces(200)
             .Produces(400)
-            .Produces(401)
             .Produces(404);
 
         endpoints.MapPost("/user", ChangeUserRole)
             .WithSummary("Изменить роль у пользователя")
             .Produces(200)
-            .Produces(401)
             .Produces(404)
             .RequireAuthorization("AdminOnly");
         
         return endpoints;
     }
 
+    private static async Task<IResult> GetDashboard(ClaimsPrincipal claims, IDashboardService dashboardService) {
+        var user = claims.ToCurrentUser();
+        var (requestsCount, usersCount, modelsCount) = await dashboardService.GetAsync(user.userId);
+        return Results.Ok(new DashboardResponse(requestsCount, usersCount, modelsCount));
+    }
+
     private static async Task<IResult> GiveTokens(ClaimsPrincipal claims, [FromBody] GiveTokensRequest  request, ITokenService tokenService) {
-        var user =  claims.ToCurrentUser();
+        var user = claims.ToCurrentUser();
         await tokenService.GiveTokens(user.userId, request.user_id, request.token_count);
         return Results.Ok();
     }
 
-    private static async Task<IResult> ChangeUserRole([FromBody] ChangeUserRoleRequest req, IUserService userService) {
-        await userService.ChangeUserRole(req.user_id, req.role);
+    private static async Task<IResult> ChangeUserRole([FromBody] ChangeUserRoleRequest req, IUserService userService, ClaimsPrincipal claims) {
+        var user = claims.ToCurrentUser();
+        await userService.ChangeUserRole(user.userId, req.user_id, req.role);
         return Results.Ok();
     }
 }

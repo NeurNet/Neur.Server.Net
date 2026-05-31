@@ -30,7 +30,7 @@ namespace Neur.Server.Net.Postgres.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ModelId")
+                    b.Property<Guid?>("ModelId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -59,12 +59,22 @@ namespace Neur.Server.Net.Postgres.Migrations
                     b.Property<DateTime?>("FinishedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ModelId")
+                    b.Property<Guid?>("ModelId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Prompt")
+                    b.Property<string>("ModelName")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("ModelOllama")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PromptMessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ResponseMessageId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("timestamp with time zone");
@@ -83,6 +93,10 @@ namespace Neur.Server.Net.Postgres.Migrations
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("ModelId");
+
+                    b.HasIndex("PromptMessageId");
+
+                    b.HasIndex("ResponseMessageId");
 
                     b.HasIndex("UserId");
 
@@ -157,6 +171,28 @@ namespace Neur.Server.Net.Postgres.Migrations
                     b.ToTable("Models");
                 });
 
+            modelBuilder.Entity("Neur.Server.Net.Core.Entities.SettingsEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("JsonContent")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("Content");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Settings", (string)null);
+                });
+
             modelBuilder.Entity("Neur.Server.Net.Core.Entities.UserEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -192,8 +228,7 @@ namespace Neur.Server.Net.Postgres.Migrations
                     b.HasOne("Neur.Server.Net.Core.Entities.ModelEntity", "Model")
                         .WithMany()
                         .HasForeignKey("ModelId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Neur.Server.Net.Core.Entities.UserEntity", "User")
                         .WithMany("Chats")
@@ -211,8 +246,18 @@ namespace Neur.Server.Net.Postgres.Migrations
                     b.HasOne("Neur.Server.Net.Core.Entities.ModelEntity", "Model")
                         .WithMany()
                         .HasForeignKey("ModelId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Neur.Server.Net.Core.Entities.MessageEntity", "PromptMessage")
+                        .WithMany()
+                        .HasForeignKey("PromptMessageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Neur.Server.Net.Core.Entities.MessageEntity", "ResponseMessage")
+                        .WithMany()
+                        .HasForeignKey("ResponseMessageId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Neur.Server.Net.Core.Entities.UserEntity", "User")
                         .WithMany()
@@ -221,6 +266,10 @@ namespace Neur.Server.Net.Postgres.Migrations
                         .IsRequired();
 
                     b.Navigation("Model");
+
+                    b.Navigation("PromptMessage");
+
+                    b.Navigation("ResponseMessage");
 
                     b.Navigation("User");
                 });

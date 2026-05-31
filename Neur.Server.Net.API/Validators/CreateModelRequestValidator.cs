@@ -11,13 +11,15 @@ public class CreateModelRequestValidator : AbstractValidator<CreateModelReqest> 
             .NotEmpty().WithMessage("Name must not be empty")
             .MinimumLength(2).WithMessage("Name must be at least 2 characters long");
         RuleFor(x => x.version)
-            .MinimumLength(1).WithMessage("Version must be at least 1 characters long");
+            .NotEmpty().WithMessage("Version must not be empty");
+        RuleFor(x => x.context)
+            .NotNull().WithMessage("Context must not be null");
         RuleFor(x => x.type)
             .NotEmpty().WithMessage("Type must not be empty")
             .Must(type => 
                 Enum.IsDefined(typeof(ModelType), type)
             )
-            .WithMessage("Invalid model type! Available types: 'text', 'code' or 'image'");
+            .WithMessage("Invalid model type! Available types: 'Text', 'Code' or 'Image'");
         RuleFor(x => x.status)
             .NotEmpty().WithMessage("Status must not be empty")
             .Must(status => 

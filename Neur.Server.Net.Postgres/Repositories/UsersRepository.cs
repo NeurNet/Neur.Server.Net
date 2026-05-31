@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Records;
 using Neur.Server.Net.Core.Repositories;
@@ -14,7 +15,6 @@ public class UsersRepository : IUsersRepository {
     
     public async Task AddAsync(UserEntity user, CancellationToken token = default) {
         await _db.AddAsync(user,  token);
-        await _db.SaveChangesAsync(token);
     }
 
     public async Task<UserEntity> GetByLdapIdAsync(string ldapId, CancellationToken token = default) {
@@ -38,10 +38,31 @@ public class UsersRepository : IUsersRepository {
         return user;
     }
 
-    public async Task<List<UserEntity>> GetAllAsync(CancellationToken token = default) {
-        var  users = await _db.Users
-            .AsNoTracking()
+    public async Task<List<(UserEntity User, DateTime? LastRequestTime)>> GetAllWithLastRequestTimeAsync(CancellationToken token = default) {
+        var raw = await _db.Users
+            .GroupJoin(
+                _db.GenerationRequests,
+                u => u.Id,
+                r => r.UserId,
+                (u, r) => new {
+                    User = u,
+                    LastRequestTime = r.OrderByDescending(req => req.CreatedAt)
+                        .Select(req => (DateTime?)req.CreatedAt)
+                        .FirstOrDefault()
+                }
+            )
             .ToListAsync(token);
-        return users;
+
+        return raw.Select(u => (u.User, u.LastRequestTime)).ToList();
+    }
+
+    public async Task UpdateRoleAsync(Guid id, UserRole role, CancellationToken token = default) {
+        await _db.Users
+            .Where(u => u.Id == id)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.Role, role), token);
+    }
+
+    public async Task<int> GetCountAsync(CancellationToken token = default) {
+        return await _db.Users.CountAsync(token);
     }
 }

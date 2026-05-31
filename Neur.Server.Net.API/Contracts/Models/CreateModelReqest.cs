@@ -5,8 +5,8 @@ namespace Neur.Server.Net.API.Contracts.Models;
 public record CreateModelReqest (
     [Required] string name,
     [Required] string model,
-    string? context,
+    [Required] string context,
     [Required] string type,
-    string? version,
+    [Required] string version,
     [Required] string status
 );

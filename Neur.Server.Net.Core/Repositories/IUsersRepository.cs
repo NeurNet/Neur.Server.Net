@@ -1,3 +1,4 @@
+using Neur.Server.Net.Core.Data;
 using Neur.Server.Net.Core.Entities;
 using Neur.Server.Net.Core.Records;
 
@@ -7,5 +8,8 @@ public interface IUsersRepository {
     Task AddAsync(UserEntity user, CancellationToken token = default);
     Task<UserEntity> GetByLdapIdAsync(string id, CancellationToken token = default);
     Task<UserEntity?> GetByIdAsync(Guid id, bool tracking = false, CancellationToken token = default);
-    Task<List<UserEntity>> GetAllAsync(CancellationToken token = default);
+    Task<List<(UserEntity User, DateTime? LastRequestTime)>> GetAllWithLastRequestTimeAsync(
+        CancellationToken token = default);
+    Task UpdateRoleAsync(Guid id, UserRole role, CancellationToken token = default);
+    Task<int> GetCountAsync(CancellationToken token = default);
 }

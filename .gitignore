@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+CLAUDE.md
+pr-*
+
 # User-specific files
 *.rsuser
 *.suo

@@ -15,22 +15,26 @@ public class ModelsRepository : IModelsRepository {
 
     public async Task AddAsync(ModelEntity model, CancellationToken token = default) {
         await _db.AddAsync(model, token);
-        await _db.SaveChangesAsync(token);
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken token = default) {
+    public async Task DeleteAsync(ModelEntity model, CancellationToken token = default) {
         await _db.Models
-            .Where(model => model.Id == id)
-            .ExecuteDeleteAsync(token);
+            .Where(m => m.Id == model.Id)
+            .ExecuteDeleteAsync();
     }
 
-    public async Task<ModelEntity?> GetAsync(Guid id, CancellationToken token = default) {
-        return await _db.Models
-            .AsNoTracking()
+    public async Task<ModelEntity?> GetAsync(Guid id, bool tracking = false, CancellationToken token = default) {
+        var query = tracking ? _db.Models : _db.Models.AsNoTracking();
+        
+        return await query
             .FirstOrDefaultAsync(model => model.Id == id,  token);
     }
 
     public async Task<List<ModelEntity>> GetAllAsync(CancellationToken token = default) {
         return await _db.Models.AsNoTracking().ToListAsync(token);
+    }
+
+    public async Task<int> GetCountAsync(CancellationToken token = default) {
+        return await _db.Models.CountAsync(token);
     }
 }

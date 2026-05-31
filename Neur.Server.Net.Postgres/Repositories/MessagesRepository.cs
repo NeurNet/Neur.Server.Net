@@ -14,14 +14,13 @@ public class MessagesRepository : IMessagesRepository {
     
     public async Task AddAsync(MessageEntity message, CancellationToken token = default) {
         await _db.Messages.AddAsync(message, token);
-        await _db.SaveChangesAsync(token);
     }
 
-    public async Task<List<MessageEntity>> GetChatMessagesAsync(Guid chatId, CancellationToken token = default) {
+    public async Task<List<MessageEntity>> GetUserMessagesAsync(Guid userId, Guid chatId, CancellationToken token = default) {
         return
             await _db.Messages
                 .AsNoTracking()
-                .Where(m => m.ChatId == chatId)
+                .Where(m => m.ChatId == chatId && m.Chat.UserId == userId)
                 .OrderBy(m => m.CreatedAt)
                 .ToListAsync(token);
     }

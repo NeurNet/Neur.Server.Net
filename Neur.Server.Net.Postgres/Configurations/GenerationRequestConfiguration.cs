@@ -13,11 +13,23 @@ public class GenerationRequestConfiguration : IEntityTypeConfiguration<Generatio
         builder
             .HasOne(x => x.Model)
             .WithMany()
-            .HasForeignKey(x => x.ModelId);
+            .HasForeignKey(x => x.ModelId)
+            .OnDelete(DeleteBehavior.SetNull);
         builder
             .HasOne(x => x.User)
             .WithMany()
             .HasForeignKey(x => x.UserId);
+        builder
+            .HasOne(x => x.PromptMessage)
+            .WithMany()
+            .HasForeignKey(x => x.PromptMessageId);
+        builder
+            .HasOne(x => x.ResponseMessage)
+            .WithMany()
+            .HasForeignKey(x => x.ResponseMessageId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.Property(x => x.ModelName).IsRequired();
+        builder.Property(x => x.ModelOllama).IsRequired();
         builder.HasIndex(x => x.CreatedAt);
         builder.Property(x => x.StartedAt);
         builder.Property(x => x.FinishedAt);

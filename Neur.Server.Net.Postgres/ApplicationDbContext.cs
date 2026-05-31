@@ -8,9 +8,11 @@ namespace Neur.Server.Net.Postgres;
 
 public class ApplicationDbContext : DbContext {
     private readonly IConfiguration _configuration;
-    
-    public ApplicationDbContext(IConfiguration configuration) {
+    private readonly ILoggerFactory _loggerFactory;
+
+    public ApplicationDbContext(IConfiguration configuration, ILoggerFactory loggerFactory) {
         _configuration = configuration;
+        _loggerFactory = loggerFactory;
     }
     
     public virtual DbSet<UserEntity> Users { get; set; }
@@ -18,12 +20,12 @@ public class ApplicationDbContext : DbContext {
     public virtual DbSet<ChatEntity> Chats { get; set; }
     public virtual DbSet<GenerationRequestEntity> GenerationRequests { get; set; }
     public virtual DbSet<MessageEntity> Messages { get; set; }
+    public virtual DbSet<SettingsEntity> Settings { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         optionsBuilder
             .UseNpgsql(_configuration.GetConnectionString("DatabaseContext"))
-            .UseLoggerFactory(LoggerFactory.Create(builder => builder.AddConsole()))
-            .EnableSensitiveDataLogging();
+            .UseLoggerFactory(_loggerFactory);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
@@ -32,5 +34,6 @@ public class ApplicationDbContext : DbContext {
         modelBuilder.ApplyConfiguration(new ChatConfiguration());
         modelBuilder.ApplyConfiguration(new GenerationRequestConfiguration());
         modelBuilder.ApplyConfiguration(new MessageConfiguration());
+        modelBuilder.ApplyConfiguration(new SettingsConfiguration());
     }
 }

@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Neur.Server.Net.API.Contracts.Users;
 using Neur.Server.Net.API.Extensions;
+using Neur.Server.Net.API.Filters;
+using Neur.Server.Net.Application.Exeptions;
 using Neur.Server.Net.Application.Interfaces;
 using Neur.Server.Net.Application.Services;
 using Neur.Server.Net.Core.Entities;
@@ -26,13 +28,14 @@ public static class UserEndPoints {
             .WithDescription("Проверяет <b>Cookie</b> в запросе, если секретный ключ соответствует действительному - возвращает пользователя")
             .Produces<UserAuthResponse>(200, "application/json")
             .Produces(401)
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .AddEndpointFilter<UserFilter>();
         endpoints.MapPost("/auth/logout", Logout)
             .WithSummary("Выход из сервиса")
             .WithDescription("Удаляет Cookie <b>'auth_token'</b>");
         endpoints.MapGet(string.Empty, GetAll)
             .WithSummary("Получить список всех пользователей")
-            .Produces<List<UserResponse>>()
+            .Produces<List<UserWithLastRequestResponse>>()
             .Produces(401)
             .RequireAuthorization("TeacherOrAdmin");
         endpoints.MapGet("/{id}", GetById)
@@ -45,9 +48,9 @@ public static class UserEndPoints {
         return endpoints;
     }
     
-    private static async Task<IResult> Login(UserLoginRequest req, IUserService userService, HttpResponse response, IOptions<JwtOptions> _jwtOptions) {
+    private static async Task<IResult> Login(UserLoginRequest req, IUserService userService, HttpResponse response, HttpContext context, IOptions<JwtOptions> _jwtOptions) {
         var jwtOptions = _jwtOptions.Value;
-        var token = await userService.Login(req.username, req.password);
+        var token = await userService.Login(req.username, req.password, context.RequestAborted);
         response.Cookies.Append("auth_token", token, new CookieOptions {
             HttpOnly = true,
             SameSite = SameSiteMode.Strict,
@@ -62,25 +65,14 @@ public static class UserEndPoints {
         return Results.Ok();
     }
     
-    private static async Task<IResult> Auth(ClaimsPrincipal claimsPrincipal, IUsersRepository userRepository) {
-        var cookie = claimsPrincipal.ToCurrentUser();
-        var user = await userRepository.GetByIdAsync(cookie.userId);
-
-        var userRole = user.Role.ToString().ToLower();
-        
-        return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, userRole, user.Tokens));
+    private static async Task<IResult> Auth(HttpContext ctx, IUsersRepository userRepository) {
+        var user = ctx.GetUser();
+        return Results.Json(new UserAuthResponse(user.Id.ToString(), user.Username, user.Name, user.Surname, user.Role, user.Tokens));
     }
 
-    private static async Task<IEnumerable<UserResponse>> GetAll(IUserService userService) {
-        var users = await userService.GetAllUsers();
-        return users.Select(x => new UserResponse(
-            x.Id,
-            x.Username,
-            x.Name,
-            x.Surname,
-            x.Role,
-            x.Tokens
-        ));
+    private static async Task<IResult> GetAll(IUserService userService, CancellationToken cancellationToken) {
+        var usersWithLastRequest = await userService.GetAllUsersWithLastRequest(cancellationToken);
+        return Results.Ok(usersWithLastRequest.ToResponse());
     }
 
     private static async Task<IResult> GetById(Guid id, IUsersRepository userRepository) {
